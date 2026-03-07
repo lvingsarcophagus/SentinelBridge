@@ -1,0 +1,9 @@
+# ==========================================================================
+# CRE WORKFLOW SETTINGS — sentinel-bridge-watchdog
+# ==========================================================================
+local-simulation:
+  user-workflow:
+    workflow-name: "sentinel-bridge-watchdog"
+  workflow-artifacts:
+    workflow-path: "./index.ts"
+    config-path: "./config.json"

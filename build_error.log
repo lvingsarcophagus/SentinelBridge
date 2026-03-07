@@ -1,0 +1,6 @@
+
+> sentinel-bridge-watchdog@1.0.0 workflow:build C:\Users\nayan\OneDrive\Desktop\NJ_PROJ_2026\SentinelBridge
+> tsc --project tsconfig.workflow.json
+
+src/workflows/sentinel-bridge/groq-analyzer.ts(85,10): error TS6133: 'callGroq' is declared but its value is never read.
+ΓÇëELIFECYCLEΓÇë Command failed with exit code 2.

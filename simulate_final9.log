@@ -1,0 +1,25 @@
+
+> sentinel-bridge-watchdog@1.0.0 simulate C:\Users\nayan\OneDrive\Desktop\NJ_PROJ_2026\SentinelBridge
+> pnpm run workflow:build && cre workflow simulate ./dist --target local-simulation --non-interactive
+
+
+> sentinel-bridge-watchdog@1.0.0 workflow:build C:\Users\nayan\OneDrive\Desktop\NJ_PROJ_2026\SentinelBridge
+> tsc --project tsconfig.workflow.json && copy src\workflows\sentinel-bridge\*.ts dist\ && copy src\workflows\sentinel-bridge\workflow.yaml dist\ && copy src\workflows\sentinel-bridge\config.json dist\
+
+src\workflows\sentinel-bridge\abi.ts
+src\workflows\sentinel-bridge\groq-analyzer.ts
+src\workflows\sentinel-bridge\index.ts
+src\workflows\sentinel-bridge\risk-engine.ts
+        4 file(s) copied.
+        1 file(s) copied.
+        1 file(s) copied.
+Initializing...
+Loading settings...
+! Using default private key for chain write simulation. To use your own key, set CRE_ETH_PRIVATE_KEY in your .env file or system environment.
+Checking RPC connectivity...
+Compiling workflow...
+Γ£ù Build failed:
+Γ£ù failed to compile workflow: failed to compile workflow: exit status 1
+build output:                                                          
+The system cannot find the path specified.                             
+ΓÇëELIFECYCLEΓÇë Command failed with exit code 1.

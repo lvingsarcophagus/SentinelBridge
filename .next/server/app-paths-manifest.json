@@ -1,0 +1,9 @@
+{
+  "/api/logs/route": "app/api/logs/route.js",
+  "/api/status/route": "app/api/status/route.js",
+  "/api/demo/execute/route": "app/api/demo/execute/route.js",
+  "/api/demo/analyze/route": "app/api/demo/analyze/route.js",
+  "/page": "app/page.js",
+  "/demo-controller/page": "app/demo-controller/page.js",
+  "/docs/page": "app/docs/page.js"
+}

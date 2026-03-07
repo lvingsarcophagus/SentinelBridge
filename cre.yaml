@@ -1,0 +1,9 @@
+project:
+  name: sentinel-bridge-watchdog
+
+targets:
+  default:
+    type: cvm
+    runtime: javascript
+    main: ./workflow-dist/index.js
+

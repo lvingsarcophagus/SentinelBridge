@@ -1,0 +1,23 @@
+{
+	"schedule": "0 */1 * * * *",
+	"bridgeAddress": "0x4A679253410272dd5232B3Ff7cF5dbB88f295319",
+	"chainSelectorName": "ethereum-testnet-sepolia",
+	"riskThresholdPercent": 80,
+	"groqApiKey": "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",
+	"baselineHistory": [
+		200,
+		205,
+		198,
+		210,
+		203,
+		207,
+		195,
+		201,
+		208,
+		200
+	],
+	"velocityMultiplierThreshold": 3,
+	"stdDeviationThreshold": 3,
+	"expectedReserveRatio": 2,
+	"maxOracleDriftPercent": 25
+}

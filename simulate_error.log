@@ -1,0 +1,14 @@
+
+> sentinel-bridge-watchdog@1.0.0 simulate C:\Users\nayan\OneDrive\Desktop\NJ_PROJ_2026\SentinelBridge
+> cre workflow simulate ./src/workflows/sentinel-bridge --target local-simulation --non-interactive
+
+Initializing...
+Loading settings...
+! Using default private key for chain write simulation. To use your own key, set CRE_ETH_PRIVATE_KEY in your .env file or system environment.
+Checking RPC connectivity...
+Compiling workflow...
+Γ£ù Build failed:
+Γ£ù failed to compile workflow: failed to compile workflow: exit status 1
+build output:                                                          
+The system cannot find the path specified.                             
+ΓÇëELIFECYCLEΓÇë Command failed with exit code 1.

@@ -1,0 +1,11 @@
+
+> sentinel-bridge-watchdog@1.0.0 simulate C:\Users\nayan\OneDrive\Desktop\NJ_PROJ_2026\SentinelBridge
+> pnpm run workflow:build && cre workflow simulate ./dist --target local-simulation --non-interactive
+
+
+> sentinel-bridge-watchdog@1.0.0 workflow:build C:\Users\nayan\OneDrive\Desktop\NJ_PROJ_2026\SentinelBridge
+> tsc --project tsconfig.workflow.json
+
+Initializing...
+Γ£ù failed to load settings: failed to load settings: failed to load workflow settings: error loading config file workflow.yaml: open workflow.yaml: The system cannot find the file specified.
+ΓÇëELIFECYCLEΓÇë Command failed with exit code 1.

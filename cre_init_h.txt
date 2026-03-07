@@ -1,0 +1,37 @@
+Initialize a new CRE project or add a workflow to an existing one.
+
+This sets up the project structure, configuration, and starter files so you can
+build, test, and deploy workflows quickly.
+
+Templates are fetched dynamically from GitHub repositories.
+
+Usage:
+  cre init [flags]
+
+Flags:
+  -h, --help                   help for init
+  -p, --project-name string    Name for the new project
+      --refresh                Bypass template cache and fetch fresh data
+      --rpc-url stringArray    RPC URL for a network (format: chain-name=url, repeatable)
+  -t, --template string        Name of the template to use (e.g., kv-store-go)
+  -w, --workflow-name string   Name for the new workflow
+
+Global Flags:
+  -e, --env string            Path to .env file which contains sensitive info (default ".env")
+  -R, --project-root string   Path to the project root
+  -T, --target string         Use target settings from YAML config
+  -v, --verbose               Run command in VERBOSE mode
+
+Tip: New here? Run:
+  $ cre login
+    to login into your cre account, then:
+  $ cre init
+    to create your first cre project.
+
+≡ƒöæ Ready to deploy? Run:
+  $ cre account access
+    to request deployment access.
+
+Need more help?
+  Visit https://docs.chain.link/cre
+
