@@ -1,12 +1,12 @@
 {
   "/api/demo/analyze/route": "/api/demo/analyze",
   "/api/demo/bridge-state/route": "/api/demo/bridge-state",
-  "/api/demo/execute/route": "/api/demo/execute",
-  "/api/pause/route": "/api/pause",
   "/_not-found/page": "/_not-found",
-  "/api/demo/status/route": "/api/demo/status",
-  "/api/status/route": "/api/status",
+  "/api/demo/execute/route": "/api/demo/execute",
   "/api/logs/route": "/api/logs",
+  "/api/demo/status/route": "/api/demo/status",
+  "/api/pause/route": "/api/pause",
+  "/api/status/route": "/api/status",
   "/demo-controller/page": "/demo-controller",
   "/docs/page": "/docs",
   "/page": "/"

@@ -19,14 +19,14 @@
     "workflow:build": "tsc --project tsconfig.workflow.json",
     "workflow:watch": "tsc --project tsconfig.workflow.json --watch",
     "node:start": "hardhat node",
-    "node:deploy": "hardhat run scripts/deploy-bridge.ts --network localhost",
-    "demo:crisis": "hardhat run scripts/demo-crisis.ts --network localhost",
-    "demo:normal": "hardhat run scripts/demo-normal.ts --network localhost",
-    "demo:show": "hardhat run scripts/show-bridge-state.ts --network localhost",
-    "demo:stealth": "hardhat run scripts/demo-stealth-drain.ts --network localhost",
-    "demo:flash": "hardhat run scripts/demo-flash-loan.ts --network localhost",
-    "demo:governance": "hardhat run scripts/demo-governance.ts --network localhost",
-    "demo:oracle": "hardhat run scripts/demo-oracle.ts --network localhost"
+    "node:deploy": "hardhat run scripts/deploy-bridge.ts",
+    "demo:crisis": "hardhat run scripts/demo-crisis.ts",
+    "demo:normal": "hardhat run scripts/demo-normal.ts",
+    "demo:show": "hardhat run scripts/show-bridge-state.ts",
+    "demo:stealth": "hardhat run scripts/demo-stealth-drain.ts",
+    "demo:flash": "hardhat run scripts/demo-flash-loan.ts",
+    "demo:governance": "hardhat run scripts/demo-governance.ts",
+    "demo:oracle": "hardhat run scripts/demo-oracle.ts"
   },
   "dependencies": {
     "@chainlink/cre-sdk": "^1.1.4",

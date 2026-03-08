@@ -8,6 +8,11 @@ let nodeProcess: any = null;
 let demoRunning = false;
 
 async function isNodeRunning(): Promise<boolean> {
+  // In production (Netlify), we bypass local node checks and run against Sepolia
+  if (process.env.NETLIFY === "true" || process.env.NODE_ENV === "production" || process.env.VERCEL) {
+    return true; 
+  }
+
   try {
     const response = await axios.post("http://127.0.0.1:8545", {
       jsonrpc: "2.0",
@@ -67,14 +72,21 @@ export async function POST(request: Request) {
     const { action } = await request.json();
 
     if (action === "check") {
+      const isProd = process.env.NETLIFY === "true" || process.env.NODE_ENV === "production" || process.env.VERCEL;
       const running = await isNodeRunning();
       const contractPath = path.join(process.cwd(), "tmp/bridge-address.json");
-      const deployed = fs.existsSync(contractPath);
       
+      let deployed = false;
       let contractAddress = null;
-      if (deployed) {
+      
+      if (fs.existsSync(contractPath)) {
+        deployed = true;
         const data = JSON.parse(fs.readFileSync(contractPath, "utf-8"));
         contractAddress = data.address;
+      } else if (isProd && process.env.NEXT_PUBLIC_BRIDGE_ADDRESS) {
+         // In production use the bridge address from env vars
+         deployed = true;
+         contractAddress = process.env.NEXT_PUBLIC_BRIDGE_ADDRESS;
       }
 
       return NextResponse.json({
@@ -114,16 +126,42 @@ export async function POST(request: Request) {
       });
     }
 
+    const isProd = process.env.NETLIFY === "true" || process.env.NODE_ENV === "production" || process.env.VERCEL;
+    const networkFlag = isProd ? "--network sepolia" : "--network localhost";
+
     if (action === "deploy-bridge") {
       demoRunning = true;
-      const result = await executeCommand("pnpm", ["run", "node:deploy"]);
+      
+      if (isProd) {
+         demoRunning = false;
+         if (process.env.NEXT_PUBLIC_BRIDGE_ADDRESS) {
+           return NextResponse.json({
+             success: true,
+             output: `[PROD_MODE] Skipping local deployment. Using existing contract at ${process.env.NEXT_PUBLIC_BRIDGE_ADDRESS} from NEXT_PUBLIC_BRIDGE_ADDRESS.`,
+             error: "",
+             deployed: true,
+             contractAddress: process.env.NEXT_PUBLIC_BRIDGE_ADDRESS,
+           });
+         } else {
+            return NextResponse.json({
+              success: false,
+              output: "",
+              error: "In production, you must supply NEXT_PUBLIC_BRIDGE_ADDRESS in Netlify environment variables.",
+              deployed: false,
+              contractAddress: null,
+            });
+         }
+      }
+
+      const result = await executeCommand("pnpm", ["run", "node:deploy", networkFlag]);
       demoRunning = false;
 
       const contractPath = path.join(process.cwd(), "tmp/bridge-address.json");
-      const deployed = fs.existsSync(contractPath);
-
+      let deployed = false;
       let contractAddress = null;
-      if (deployed) {
+      
+      if (fs.existsSync(contractPath)) {
+        deployed = true;
         const data = JSON.parse(fs.readFileSync(contractPath, "utf-8"));
         contractAddress = data.address;
       }
@@ -137,81 +175,19 @@ export async function POST(request: Request) {
       });
     }
 
-    if (action === "demo-crisis") {
+    const demoActions: Record<string, string> = {
+      "demo-crisis": "demo:crisis",
+      "demo-flash": "demo:flash",
+      "demo-normal": "demo:normal",
+      "demo-stealth": "demo:stealth",
+      "demo-governance": "demo:governance",
+      "demo-oracle": "demo:oracle",
+      "demo-show": "demo:show",
+    };
+
+    if (demoActions[action]) {
       demoRunning = true;
-      const result = await executeCommand("pnpm", ["run", "demo:crisis"]);
-      demoRunning = false;
-
-      return NextResponse.json({
-        success: result.exitCode === 0,
-        output: result.output,
-        error: result.error,
-      });
-    }
-
-    if (action === "demo-flash") {
-      demoRunning = true;
-      const result = await executeCommand("pnpm", ["run", "demo:flash"]);
-      demoRunning = false;
-
-      return NextResponse.json({
-        success: result.exitCode === 0,
-        output: result.output,
-        error: result.error,
-      });
-    }
-
-    if (action === "demo-normal") {
-      demoRunning = true;
-      const result = await executeCommand("pnpm", ["run", "demo:normal"]);
-      demoRunning = false;
-
-      return NextResponse.json({
-        success: result.exitCode === 0,
-        output: result.output,
-        error: result.error,
-      });
-    }
-
-    if (action === "demo-stealth") {
-      demoRunning = true;
-      const result = await executeCommand("pnpm", ["run", "demo:stealth"]);
-      demoRunning = false;
-
-      return NextResponse.json({
-        success: result.exitCode === 0,
-        output: result.output,
-        error: result.error,
-      });
-    }
-
-    if (action === "demo-governance") {
-      demoRunning = true;
-      const result = await executeCommand("pnpm", ["run", "demo:governance"]);
-      demoRunning = false;
-
-      return NextResponse.json({
-        success: result.exitCode === 0,
-        output: result.output,
-        error: result.error,
-      });
-    }
-
-    if (action === "demo-oracle") {
-      demoRunning = true;
-      const result = await executeCommand("pnpm", ["run", "demo:oracle"]);
-      demoRunning = false;
-
-      return NextResponse.json({
-        success: result.exitCode === 0,
-        output: result.output,
-        error: result.error,
-      });
-    }
-
-    if (action === "demo-show") {
-      demoRunning = true;
-      const result = await executeCommand("pnpm", ["run", "demo:show"]);
+      const result = await executeCommand("pnpm", ["run", demoActions[action], networkFlag]);
       demoRunning = false;
 
       return NextResponse.json({

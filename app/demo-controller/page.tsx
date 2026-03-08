@@ -218,7 +218,7 @@ export default function DemoController() {
           <div className="text-right">
             <div className="flex items-center gap-3 bg-black/40 border border-[#00E5FF]/20 px-4 py-2 rounded">
               <div className={`w-2 h-2 rounded-sm ${status.nodeRunning ? "bg-emerald-500" : "bg-red-500"}`}></div>
-              <span className="text-xs text-slate-300">RPC_NODE: {status.nodeRunning ? "ONLINE" : "OFFLINE"}</span>
+              <span className="text-xs text-slate-300">NETWORK: {status.nodeRunning ? "ONLINE" : "OFFLINE"}</span>
             </div>
             <div className="flex items-center gap-3 bg-black/40 border border-[#00E5FF]/20 px-4 py-2 rounded mt-2">
               <div className={`w-2 h-2 rounded-sm ${aiPolling ? "bg-purple-500 animate-pulse" : "bg-slate-600"}`}></div>
@@ -239,9 +239,9 @@ export default function DemoController() {
               </h2>
               <div className="space-y-3 text-xs">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Node Process:</span>
+                  <span className="text-slate-500">Network Connection:</span>
                   <span className={status.nodeRunning ? "text-emerald-400" : "text-red-400"}>
-                    {status.nodeRunning ? "RUNNING" : "STOPPED"}
+                    {status.nodeRunning ? "CONNECTED" : "DISCONNECTED"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -250,6 +250,14 @@ export default function DemoController() {
                     {status.deployed ? "DEPLOYED" : "AWAITING..."}
                   </span>
                 </div>
+                {status.deployed && status.contractAddress && (
+                  <div className="flex justify-between items-center mt-2 pt-2 border-t border-[#00E5FF]/10">
+                    <span className="text-slate-500">Target Address:</span>
+                    <span className="text-[#00E5FF] font-mono select-all">
+                      {status.contractAddress.substring(0, 6)}...{status.contractAddress.substring(38)}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -264,7 +272,7 @@ export default function DemoController() {
                   disabled={status.nodeRunning}
                   className="w-full text-left px-3 py-2 bg-[#00E5FF]/5 hover:bg-[#00E5FF]/10 border border-[#00E5FF]/20 text-[#00E5FF] text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed group flex justify-between items-center"
                 >
-                  <span>&gt; init_rpc</span>
+                  <span>&gt; connect_network</span>
                   <span className="opacity-0 group-hover:opacity-100 transition-opacity">↵</span>
                 </button>
                 <button

@@ -1,12 +1,12 @@
 {
   "/api/demo/analyze/route": "app/api/demo/analyze/route.js",
   "/api/demo/bridge-state/route": "app/api/demo/bridge-state/route.js",
-  "/api/demo/execute/route": "app/api/demo/execute/route.js",
-  "/api/pause/route": "app/api/pause/route.js",
   "/_not-found/page": "app/_not-found/page.js",
-  "/api/demo/status/route": "app/api/demo/status/route.js",
-  "/api/status/route": "app/api/status/route.js",
+  "/api/demo/execute/route": "app/api/demo/execute/route.js",
   "/api/logs/route": "app/api/logs/route.js",
+  "/api/demo/status/route": "app/api/demo/status/route.js",
+  "/api/pause/route": "app/api/pause/route.js",
+  "/api/status/route": "app/api/status/route.js",
   "/demo-controller/page": "app/demo-controller/page.js",
   "/docs/page": "app/docs/page.js",
   "/page": "app/page.js"
