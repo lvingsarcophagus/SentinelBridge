@@ -21,6 +21,20 @@
       "static/chunks/main-app-848c5ccc58f86331.js",
       "static/chunks/app/api/demo/bridge-state/route-d516d5470e2d18a6.js"
     ],
+    "/api/demo/execute/route": [
+      "static/chunks/webpack-b9afd1ad9c20b8d1.js",
+      "static/chunks/6821f731-eb14f477759ac37a.js",
+      "static/chunks/657-dddfe28df0c9afb0.js",
+      "static/chunks/main-app-848c5ccc58f86331.js",
+      "static/chunks/app/api/demo/execute/route-d516d5470e2d18a6.js"
+    ],
+    "/api/demo/status/route": [
+      "static/chunks/webpack-b9afd1ad9c20b8d1.js",
+      "static/chunks/6821f731-eb14f477759ac37a.js",
+      "static/chunks/657-dddfe28df0c9afb0.js",
+      "static/chunks/main-app-848c5ccc58f86331.js",
+      "static/chunks/app/api/demo/status/route-d516d5470e2d18a6.js"
+    ],
     "/layout": [
       "static/chunks/webpack-b9afd1ad9c20b8d1.js",
       "static/chunks/6821f731-eb14f477759ac37a.js",
@@ -34,26 +48,12 @@
       "static/chunks/438-f652c236a5f3309e.js",
       "static/chunks/app/layout-a639d63ab3f52b66.js"
     ],
-    "/api/demo/execute/route": [
-      "static/chunks/webpack-b9afd1ad9c20b8d1.js",
-      "static/chunks/6821f731-eb14f477759ac37a.js",
-      "static/chunks/657-dddfe28df0c9afb0.js",
-      "static/chunks/main-app-848c5ccc58f86331.js",
-      "static/chunks/app/api/demo/execute/route-d516d5470e2d18a6.js"
-    ],
     "/api/logs/route": [
       "static/chunks/webpack-b9afd1ad9c20b8d1.js",
       "static/chunks/6821f731-eb14f477759ac37a.js",
       "static/chunks/657-dddfe28df0c9afb0.js",
       "static/chunks/main-app-848c5ccc58f86331.js",
       "static/chunks/app/api/logs/route-d516d5470e2d18a6.js"
-    ],
-    "/api/demo/status/route": [
-      "static/chunks/webpack-b9afd1ad9c20b8d1.js",
-      "static/chunks/6821f731-eb14f477759ac37a.js",
-      "static/chunks/657-dddfe28df0c9afb0.js",
-      "static/chunks/main-app-848c5ccc58f86331.js",
-      "static/chunks/app/api/demo/status/route-d516d5470e2d18a6.js"
     ],
     "/api/pause/route": [
       "static/chunks/webpack-b9afd1ad9c20b8d1.js",

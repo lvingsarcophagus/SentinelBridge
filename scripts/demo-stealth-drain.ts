@@ -22,7 +22,7 @@
  *
  * Usage: pnpm run demo:stealth
  */
-import { ethers } from 'ethers'
+import { ethers } from "ethers"
 import fs from 'fs'
 
 async function main() {
@@ -46,7 +46,8 @@ async function main() {
     process.exit(1)
   }
 
-  const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545")
+  const rpcUrl = process.env.TESTNET_RPC || "http://127.0.0.1:8545"
+  const provider = new ethers.JsonRpcProvider(rpcUrl)
   const signer = await provider.getSigner(0)
 
   const contractJson = JSON.parse(
@@ -148,7 +149,9 @@ async function main() {
 
 main()
   .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error)
+  .catch((error: any) => {
+    console.error("--- FATAL ERROR LOG ---")
+    if (error.stack) { console.error(error.stack) }
+    console.error(JSON.stringify(error, Object.getOwnPropertyNames(error), 2))
     process.exit(1)
   })

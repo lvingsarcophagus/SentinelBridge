@@ -34,6 +34,11 @@ async function executeCommand(
     const proc = spawn(command, args, {
       cwd: process.cwd(),
       shell: true,
+      env: {
+        ...process.env,
+        // Only inject if the environment variable exists, otherwise rely on hardhat fallbacks
+        ...(process.env.SEPOLIA_RPC_URL ? { TESTNET_RPC: process.env.SEPOLIA_RPC_URL } : {})
+      }
     });
 
     let output = "";

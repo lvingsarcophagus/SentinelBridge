@@ -25,8 +25,9 @@ async function main() {
     process.exit(1);
   }
 
-  // Connect to Hardhat node
-  const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+  // Connect to RPC node
+  const rpcUrl = process.env.TESTNET_RPC || "http://127.0.0.1:8545";
+  const provider = new ethers.JsonRpcProvider(rpcUrl);
   const signer = await provider.getSigner(0);
 
   // Read contract ABI

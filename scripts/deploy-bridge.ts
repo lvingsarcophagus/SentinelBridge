@@ -5,8 +5,9 @@ import path from "path";
 async function main() {
   console.log("\n🚀 Deploying SentinelBridge Mock Contracts...\n");
 
-  // Connect to Hardhat node
-  const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+  // Connect to RPC Node
+  const rpcUrl = process.env.TESTNET_RPC || "http://127.0.0.1:8545";
+  const provider = new ethers.JsonRpcProvider(rpcUrl);
   const signer = await provider.getSigner(0);
 
   // Read contract ABI and bytecode
@@ -24,7 +25,7 @@ async function main() {
     signer
   );
 
-  const sourceBridge = await factory.deploy();
+  const sourceBridge: any = await factory.deploy();
   await sourceBridge.waitForDeployment();
 
   const contractAddress = await sourceBridge.getAddress();

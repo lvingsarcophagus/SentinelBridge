@@ -30,7 +30,8 @@ async function main() {
     process.exit(1);
   }
 
-  const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+  const rpcUrl = process.env.TESTNET_RPC || "http://127.0.0.1:8545";
+  const provider = new ethers.JsonRpcProvider(rpcUrl);
   // Use account 0 since setLockedAmount is onlyOwner in the mock
   const attacker = await provider.getSigner(0);
 

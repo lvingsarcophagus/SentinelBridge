@@ -1,10 +1,10 @@
 {
   "/api/demo/analyze/route": "/api/demo/analyze",
   "/api/demo/bridge-state/route": "/api/demo/bridge-state",
-  "/_not-found/page": "/_not-found",
   "/api/demo/execute/route": "/api/demo/execute",
-  "/api/logs/route": "/api/logs",
   "/api/demo/status/route": "/api/demo/status",
+  "/_not-found/page": "/_not-found",
+  "/api/logs/route": "/api/logs",
   "/api/pause/route": "/api/pause",
   "/api/status/route": "/api/status",
   "/demo-controller/page": "/demo-controller",

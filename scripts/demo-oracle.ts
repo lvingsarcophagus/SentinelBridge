@@ -15,7 +15,8 @@ async function main() {
   }
 
   const address = JSON.parse(fs.readFileSync(addressPath, "utf-8")).address;
-  const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+  const rpcUrl = process.env.TESTNET_RPC || "http://127.0.0.1:8545";
+  const provider = new ethers.JsonRpcProvider(rpcUrl);
   const signer = await provider.getSigner(0);
   const abi = [
     "function triggerProofFailure() external",
