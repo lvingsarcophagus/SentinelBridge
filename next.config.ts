@@ -4,9 +4,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   webpack: (config) => {
     // Configure CSS loaders to work properly in ESM mode
-    config.module.rules.forEach((rule) => {
+    config.module.rules.forEach((rule: any) => {
       if (Array.isArray(rule.use)) {
-        rule.use.forEach((use) => {
+        rule.use.forEach((use: any) => {
           if (typeof use === "object" && use.loader) {
             // Ensure postcss-loader and css-loader work in ESM
             if (use.loader.includes("postcss-loader")) {

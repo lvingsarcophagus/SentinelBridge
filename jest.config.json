@@ -9,6 +9,9 @@
     "**/__tests__/**/*.ts",
     "**/?(*.)+(spec|test).ts"
   ],
+  "moduleNameMapper": {
+    "^@chainlink/cre-sdk$": "<rootDir>/tests/cre-sdk-mock.ts"
+  },
   "moduleFileExtensions": [
     "ts",
     "tsx",
