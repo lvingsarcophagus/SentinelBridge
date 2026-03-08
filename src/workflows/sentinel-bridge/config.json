@@ -1,6 +1,6 @@
 {
 	"schedule": "0 */1 * * * *",
-	"bridgeAddress": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+	"bridgeAddress": "0x9E29b188AC3194a6e056e9947C5bce9761f96BF0",
 	"chainSelectorName": "ethereum-testnet-sepolia",
 	"riskThresholdPercent": 80,
 	"groqApiKey": "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",

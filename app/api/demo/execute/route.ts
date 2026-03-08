@@ -36,8 +36,8 @@ async function executeCommand(
       shell: true,
       env: {
         ...process.env,
-        // Only inject if the environment variable exists, otherwise rely on hardhat fallbacks
-        ...(process.env.SEPOLIA_RPC_URL ? { TESTNET_RPC: process.env.SEPOLIA_RPC_URL } : {})
+        // Inject RPC URL with fallbacks
+        TESTNET_RPC: process.env.SEPOLIA_RPC_URL || process.env.SOURCE_RPC || "http://127.0.0.1:8545"
       }
     });
 
@@ -132,7 +132,11 @@ export async function POST(request: Request) {
     }
 
     const isProd = process.env.NETLIFY === "true" || process.env.NODE_ENV === "production" || process.env.VERCEL;
-    const networkFlag = isProd ? "--network sepolia" : "--network localhost";
+    const rpc = process.env.SEPOLIA_RPC_URL || process.env.SOURCE_RPC || "";
+    const isTestnet = rpc.includes("http") && !rpc.includes("127.0.0.1") && !rpc.includes("localhost");
+    
+    // Use sepolia flag if in production OR if explicitly pointing to a non-local RPC
+    const networkFlag = (isProd || isTestnet) ? "--network sepolia" : "--network localhost";
 
     if (action === "deploy-bridge") {
       demoRunning = true;

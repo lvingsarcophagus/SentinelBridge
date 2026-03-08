@@ -6,9 +6,17 @@ async function main() {
   console.log("\n🚀 Deploying SentinelBridge Mock Contracts...\n");
 
   // Connect to RPC Node
-  const rpcUrl = process.env.TESTNET_RPC || "http://127.0.0.1:8545";
+  const rpcUrl = process.env.SEPOLIA_RPC_URL || process.env.SOURCE_RPC || process.env.TESTNET_RPC || "http://127.0.0.1:8545";
   const provider = new ethers.JsonRpcProvider(rpcUrl);
-  const signer = await provider.getSigner(0);
+  
+  let signer;
+  if (process.env.DEPLOYER_PRIVATE_KEY) {
+    signer = new ethers.Wallet(process.env.DEPLOYER_PRIVATE_KEY, provider);
+    console.log(`🔑 Using deployer wallet: ${signer.address}`);
+  } else {
+    signer = await provider.getSigner(0);
+    console.log(`🔑 Using local node signer: ${await signer.getAddress()}`);
+  }
 
   // Read contract ABI and bytecode
   const contractJson = JSON.parse(
