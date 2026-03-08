@@ -14,7 +14,8 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noEmit": false,
-    "allowImportingTsExtensions": false
+    "allowImportingTsExtensions": false,
+    "incremental": false
   },
   "include": ["src/workflows/sentinel-bridge/**/*.ts"],
   "exclude": ["node_modules", ".next", "app/**/*", "components/**/*", "lib/**/*"]
