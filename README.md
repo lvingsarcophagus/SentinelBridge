@@ -16,6 +16,7 @@
 
 ## Table of Contents
 
+- [Demo Video](#-demo-video)
 - [The Problem](#-the-problem)
 - [The Solution](#-the-solution)
 - [Architecture](#-architecture)
@@ -32,7 +33,19 @@
 
 ---
 
-## 🎯 The Problem
+## 🎬 Demo Video
+
+<div align="center">
+  <a href="https://drive.google.com/file/d/1SRKN3Pf6MLVfXkb_Kee33z8MAh2E7uTR/view?usp=drive_link">
+    <img src="public/sentinel_logo_new_1772987283819.png" alt="Watch Demo" width="80" style="border-radius:50%"/>
+    <br/>
+    <strong>▶ Watch the Full Demo Video</strong>
+  </a>
+</div>
+
+---
+
+## �🎯 The Problem
 
 Cross-chain bridges are the lifeblood of interoperability but remain the most vulnerable attack vector in DeFi, having lost over **$2.8B** to exploits (Ronin $625M, Wormhole $326M, Nomad $190M, Multichain $126M). Traditional security systems respond to hacks *after* the funds have left the contract — by then, it is too late.
 
