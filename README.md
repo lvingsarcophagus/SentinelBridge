@@ -1,51 +1,43 @@
 <div align="center">
-  <img src="public/sentinel_logo_new_1772987283819.png" alt="SentinelBridge Logo" width="150"/>
-  <h1>🛡️ SentinelBridge</h1>
+  <img src="public/sentinel-logo.png" alt="SentinelBridge Logo" width="160" style="border-radius:50%"/>
+  <h1>SentinelBridge</h1>
   <p><strong>Institutional-Grade Liquidity Watchdog & Automated Circuit Breaker</strong></p>
   <p><em>Built with Chainlink CRE & Groq Fast AI for the Convergence Hackathon 2026</em></p>
-
-  ![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)
-  ![Chainlink CRE](https://img.shields.io/badge/Chainlink-CRE-375BD2?logo=chainlink)
-  ![Groq AI](https://img.shields.io/badge/Groq-LLaMA_3.1-orange)
-  ![Solidity](https://img.shields.io/badge/Solidity-0.8.20-363636?logo=solidity)
-  ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript)
-  ![License](https://img.shields.io/badge/License-MIT-green)
+  <br/>
+  <a href="https://nextjs.org"><img src="https://img.shields.io/badge/Next.js-15-black?logo=next.js" alt="Next.js"/></a>
+  <a href="https://chain.link"><img src="https://img.shields.io/badge/Chainlink-CRE-375BD2?logo=chainlink" alt="Chainlink CRE"/></a>
+  <a href="https://groq.com"><img src="https://img.shields.io/badge/Groq-LLaMA_3.1-orange" alt="Groq AI"/></a>
+  <a href="https://soliditylang.org"><img src="https://img.shields.io/badge/Solidity-0.8.20-363636?logo=solidity" alt="Solidity"/></a>
+  <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript" alt="TypeScript"/></a>
+  <img src="https://img.shields.io/badge/License-MIT-green" alt="License"/>
+  <br/><br/>
+  <a href="https://drive.google.com/file/d/1SRKN3Pf6MLVfXkb_Kee33z8MAh2E7uTR/view?usp=drive_link">
+    <img src="https://img.shields.io/badge/Demo_Video-Watch_Now-red?style=for-the-badge&logo=google-drive&logoColor=white" alt="Watch Demo"/>
+  </a>
 </div>
 
 <hr/>
 
 ## Table of Contents
 
-- [Demo Video](#-demo-video)
-- [The Problem](#-the-problem)
-- [The Solution](#-the-solution)
-- [Architecture](#-architecture)
-- [Chainlink CRE Workflow — Deep Dive](#%EF%B8%8F-chainlink-cre-workflow--deep-dive)
-- [Core Features](#-core-features)
-- [Tech Stack](#-technology-stack)
-- [Project Structure](#-project-structure)
-- [Quick Start Guide](#-quick-start-guide)
-- [Running Simulations](#-running-simulations-demo-controller)
-- [API Endpoints](#-api-endpoints)
-- [Smart Contract](#-smart-contract-sourcebridge)
-- [Security Considerations](#-security-considerations)
-- [License](#-license)
+- [The Problem](#the-problem)
+- [The Solution](#the-solution)
+- [Architecture](#architecture)
+- [Chainlink CRE Workflow — Deep Dive](#chainlink-cre-workflow--deep-dive)
+- [Core Features](#core-features)
+- [Tech Stack](#technology-stack)
+- [Project Structure](#project-structure)
+- [Quick Start Guide](#quick-start-guide)
+- [Running Simulations](#running-simulations-demo-controller)
+- [API Endpoints](#api-endpoints)
+- [Smart Contract](#smart-contract-sourcebridge)
+- [Security Considerations](#security-considerations)
+- [Development Log](#development-log)
+- [License](#license)
 
 ---
 
-## 🎬 Demo Video
-
-<div align="center">
-  <a href="https://drive.google.com/file/d/1SRKN3Pf6MLVfXkb_Kee33z8MAh2E7uTR/view?usp=drive_link">
-    <img src="public/sentinel_logo_new_1772987283819.png" alt="Watch Demo" width="80" style="border-radius:50%"/>
-    <br/>
-    <strong>▶ Watch the Full Demo Video</strong>
-  </a>
-</div>
-
----
-
-## �🎯 The Problem
+## The Problem
 
 Cross-chain bridges are the lifeblood of interoperability but remain the most vulnerable attack vector in DeFi, having lost over **$2.8B** to exploits (Ronin $625M, Wormhole $326M, Nomad $190M, Multichain $126M). Traditional security systems respond to hacks *after* the funds have left the contract — by then, it is too late.
 
@@ -53,7 +45,7 @@ Cross-chain bridges are the lifeblood of interoperability but remain the most vu
 
 ---
 
-## 🛡️ The Solution
+## The Solution
 
 **SentinelBridge** is a proactive, AI-powered liquidity watchdog that monitors bridge reserves in real-time. By leveraging **Chainlink's CRE (Chainlink Runtime Environment)** and **Groq's LLaMA 3.1 AI**, it acts as an automated circuit breaker that pauses the bridge *during* an exploit — not after.
 
@@ -67,7 +59,7 @@ Cross-chain bridges are the lifeblood of interoperability but remain the most vu
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -109,7 +101,7 @@ Cross-chain bridges are the lifeblood of interoperability but remain the most vu
 
 ---
 
-## ⛓️ Chainlink CRE Workflow — Deep Dive
+## Chainlink CRE Workflow — Deep Dive
 
 > **This is the core of the project.** The entire CRE workflow lives in `src/workflows/sentinel-bridge/`.
 
@@ -188,9 +180,9 @@ targets:
      │   └── Returns: { riskLevel, confidence, attackPattern, reasoning, recommendation }
      │
      └── Step 4: Decision engine (AI-enhanced rules)
-         ├── CRITICAL + confidence ≥ 0.8 → EVMClient.callContract("pause") 🚨
-         ├── HIGH + confidence ≥ 0.7     → Rate limit (log warning) ⚠️
-         └── Otherwise                   → Monitor (log status) 📊
+         ├── CRITICAL + confidence ≥ 0.8 → EVMClient.callContract("pause")
+         ├── HIGH + confidence ≥ 0.7     → Rate limit (log warning)
+         └── Otherwise                   → Monitor (log status)
 ```
 
 ### How CRE Capabilities Are Used
@@ -285,22 +277,22 @@ The 3-stage JSON extraction handles malformed AI responses with regex fallback a
 
 ---
 
-## ⚡ Core Features
+## Core Features
 
 | Feature | Description |
 |---------|-------------|
-| 🛡️ **Automated Circuit Breaker** | Pauses bridge operations via CRE when AI detects critical liquidity outflow |
-| 🧠 **AI Threat Intelligence** | Real-time Groq LLaMA analysis with attack pattern classification |
-| 🕵️ **Stealth Drain Detection** | Identifies slow-drip exploits that evade traditional TVL alerts |
-| 🚨 **Governance & Proof Monitoring** | Detects compromised multi-sigs and invalid ZK-proofs |
-| 📊 **Multi-Dimensional Risk Scoring** | Velocity + Anomaly + Oracle Drift with weighted scoring |
-| 🎛️ **Interactive Demo Controller** | Simulate 6 attack vectors against a live Hardhat node |
-| ⚡ **Emergency Kill Switch** | Manual `pause()` execution from the dashboard UI |
-| 📈 **Real-Time Dashboard** | Live metrics, risk gauge, activity log, security flag indicators |
+| **Automated Circuit Breaker** | Pauses bridge operations via CRE when AI detects critical liquidity outflow |
+| **AI Threat Intelligence** | Real-time Groq LLaMA analysis with attack pattern classification |
+| **Stealth Drain Detection** | Identifies slow-drip exploits that evade traditional TVL alerts |
+| **Governance & Proof Monitoring** | Detects compromised multi-sigs and invalid ZK-proofs |
+| **Multi-Dimensional Risk Scoring** | Velocity + Anomaly + Oracle Drift with weighted scoring |
+| **Interactive Demo Controller** | Simulate 6 attack vectors against a live Hardhat node |
+| **Emergency Kill Switch** | Manual `pause()` execution from the dashboard UI |
+| **Real-Time Dashboard** | Live metrics, risk gauge, activity log, security flag indicators |
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
@@ -313,11 +305,11 @@ The 3-stage JSON extraction handles malformed AI responses with regex fallback a
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 SentinelBridge/
-├── src/workflows/sentinel-bridge/   # ⛓️ CHAINLINK CRE WORKFLOW
+├── src/workflows/sentinel-bridge/   # CHAINLINK CRE WORKFLOW
 │   ├── index.ts                     #   Main orchestrator (CronCapability → EVMClient → Risk → AI → Pause)
 │   ├── risk-engine.ts               #   Multi-dimensional heuristic scoring
 │   ├── groq-analyzer.ts             #   AI classification via CRE HTTPClient
@@ -381,7 +373,7 @@ SentinelBridge/
 
 ---
 
-## 🚀 Quick Start Guide
+## Quick Start Guide
 
 ### Prerequisites
 
@@ -435,7 +427,7 @@ Navigate to **http://localhost:3000** → Click **"Enter Command Center"** → S
 
 ---
 
-## 🎮 Running Simulations (Demo Controller)
+## Running Simulations (Demo Controller)
 
 Navigate to **http://localhost:3000/demo-controller** for the interactive UI, or use the CLI:
 
@@ -455,11 +447,11 @@ Navigate to **http://localhost:3000/demo-controller** for the interactive UI, or
 2. The `SourceBridge` contract state updates with simulated outflows
 3. Keep the Dashboard (`/dashboard`) open — the AI instantly detects the anomaly
 4. AI classifies the threat (e.g., **"MASSIVE EXPLOIT"**, confidence **0.95**)
-5. Circuit breaker status flips to **ACTIVATED (Paused)** 🚨
+5. Circuit breaker status flips to **ACTIVATED (Paused)**
 
 ---
 
-## 📡 API Endpoints
+## API Endpoints
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
@@ -473,7 +465,7 @@ Navigate to **http://localhost:3000/demo-controller** for the interactive UI, or
 
 ---
 
-## 📜 Smart Contract: SourceBridge
+## Smart Contract: SourceBridge
 
 `contracts/SourceBridge.sol` — Solidity 0.8.20
 
@@ -503,7 +495,7 @@ Navigate to **http://localhost:3000/demo-controller** for the interactive UI, or
 
 ---
 
-## 🔐 Security Considerations
+## Security Considerations
 
 - **Address validation**: All contract addresses validated before EVM calls
 - **Chain ID verification**: `isChainSelectorSupported()` check before every on-chain operation
@@ -516,7 +508,7 @@ Navigate to **http://localhost:3000/demo-controller** for the interactive UI, or
 
 ---
 
-## � Development Log
+## Development Log
 
 | Date | Change | Details |
 |------|--------|---------|
@@ -531,6 +523,6 @@ Navigate to **http://localhost:3000/demo-controller** for the interactive UI, or
 
 ---
 
-## �📜 License
+## License
 
 This project is licensed under the MIT License — built for the **Chainlink Convergence Hackathon 2026**.
