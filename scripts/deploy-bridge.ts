@@ -71,17 +71,7 @@ async function main() {
     "./tmp/bridge-address.json",
     JSON.stringify({ address: contractAddress }, null, 2)
   );
-  console.log("✅ Contract address saved to tmp/bridge-address.json");
-
-  // Auto-sync CRE workflow config with deployed address
-  const creConfigPath = path.join(process.cwd(), "src/workflows/sentinel-bridge/config.json");
-  if (fs.existsSync(creConfigPath)) {
-    const creConfig = JSON.parse(fs.readFileSync(creConfigPath, "utf-8"));
-    creConfig.bridgeAddress = contractAddress;
-    fs.writeFileSync(creConfigPath, JSON.stringify(creConfig, null, "\t") + "\n");
-    console.log("✅ CRE workflow config.json synced with deployed address");
-  }
-  console.log("");
+  console.log("✅ Contract address saved to tmp/bridge-address.json\n");
 }
 
 main().catch((error) => {

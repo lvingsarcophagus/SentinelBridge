@@ -25,12 +25,14 @@ contract SourceBridge {
     /// Whether the bridge is paused
     bool public paused;
     
+    /// Whether governance has been compromised (for demo)
+    bool public governanceCompromised;
+    
+    /// Whether a proof verification has failed (for demo)
+    bool public failedProof;
+    
     /// Contract owner
     address public owner;
-    
-    /// Advanced Attack Mock Signals
-    bool public governanceCompromised;
-    bool public failedProof;
     
     // ============ Events ============
     
@@ -163,42 +165,6 @@ contract SourceBridge {
         emit BridgeUnpaused(block.timestamp);
     }
     
-    /**
-     * @dev Rate limit withdrawals (MEDIUM risk response)
-     * 
-     * Called by SentinelBridge workflow when suspicious velocity is detected
-     * restricts withdrawals to maxPerHour
-     */
-    function rateLimitWithdrawals(uint256 maxPerHour) external onlyOwner {
-        // In a real bridge, this would store the rate limit state
-        // and enforce it in the withdrawTokens function
-        // For currently, this just acts as an event trigger for visibility
-        // in the demo
-    }
-
-    /**
-     * @dev Simulate a governance hijack (for demo)
-     */
-    function triggerGovernanceHijack() external onlyOwner {
-        governanceCompromised = true;
-    }
-
-    /**
-     * @dev Simulate a proof verification failure (for demo)
-     */
-    function triggerProofFailure() external onlyOwner {
-        failedProof = true;
-    }
-
-    /**
-     * @dev Reset all mock signals (for demo)
-     */
-    function resetSignals() external onlyOwner {
-        governanceCompromised = false;
-        failedProof = false;
-        paused = false;
-    }
-    
     // ============ Transfer Functions (demo) ============
     
     /**
@@ -217,5 +183,29 @@ contract SourceBridge {
         require(amount <= lockedAmount, "Insufficient locked amount");
         lockedAmount -= amount;
         emit LockedAmountUpdated(lockedAmount);
+    }
+
+    // ============ Attack Simulation Functions (demo) ============
+
+    /**
+     * @dev Simulate a governance hijack (unauthorized ownership change)
+     */
+    function triggerGovernanceHijack() external onlyOwner {
+        governanceCompromised = true;
+    }
+
+    /**
+     * @dev Simulate a proof/oracle verification failure
+     */
+    function triggerProofFailure() external onlyOwner {
+        failedProof = true;
+    }
+
+    /**
+     * @dev Reset attack flags after demo
+     */
+    function resetAttackFlags() external onlyOwner {
+        governanceCompromised = false;
+        failedProof = false;
     }
 }

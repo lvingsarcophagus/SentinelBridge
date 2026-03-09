@@ -8,11 +8,6 @@ let nodeProcess: any = null;
 let demoRunning = false;
 
 async function isNodeRunning(): Promise<boolean> {
-  // In production (Netlify), we bypass local node checks and run against Sepolia
-  if (process.env.NETLIFY === "true" || process.env.NODE_ENV === "production" || process.env.VERCEL) {
-    return true; 
-  }
-
   try {
     const response = await axios.post("http://127.0.0.1:8545", {
       jsonrpc: "2.0",
@@ -77,21 +72,14 @@ export async function POST(request: Request) {
     const { action } = await request.json();
 
     if (action === "check") {
-      const isProd = process.env.NETLIFY === "true" || process.env.NODE_ENV === "production" || process.env.VERCEL;
       const running = await isNodeRunning();
       const contractPath = path.join(process.cwd(), "tmp/bridge-address.json");
+      const deployed = fs.existsSync(contractPath);
       
-      let deployed = false;
       let contractAddress = null;
-      
-      if (fs.existsSync(contractPath)) {
-        deployed = true;
+      if (deployed) {
         const data = JSON.parse(fs.readFileSync(contractPath, "utf-8"));
         contractAddress = data.address;
-      } else if (isProd && process.env.NEXT_PUBLIC_BRIDGE_ADDRESS) {
-         // In production use the bridge address from env vars
-         deployed = true;
-         contractAddress = process.env.NEXT_PUBLIC_BRIDGE_ADDRESS;
       }
 
       return NextResponse.json({
@@ -131,6 +119,7 @@ export async function POST(request: Request) {
       });
     }
 
+<<<<<<< Updated upstream
     const isProd = process.env.NETLIFY === "true" || process.env.NODE_ENV === "production" || process.env.VERCEL;
     const rpc = process.env.SEPOLIA_RPC_URL || process.env.SOURCE_RPC || "";
     const isTestnet = rpc.includes("http") && !rpc.includes("127.0.0.1") && !rpc.includes("localhost");
@@ -139,38 +128,18 @@ export async function POST(request: Request) {
     const networkFlag = (isProd || isTestnet) ? "--network sepolia" : "--network localhost";
 
     if (action === "deploy-bridge") {
+=======
+    if (action === "deploy") {
+>>>>>>> Stashed changes
       demoRunning = true;
-      
-      if (isProd) {
-         demoRunning = false;
-         if (process.env.NEXT_PUBLIC_BRIDGE_ADDRESS) {
-           return NextResponse.json({
-             success: true,
-             output: `[PROD_MODE] Skipping local deployment. Using existing contract at ${process.env.NEXT_PUBLIC_BRIDGE_ADDRESS} from NEXT_PUBLIC_BRIDGE_ADDRESS.`,
-             error: "",
-             deployed: true,
-             contractAddress: process.env.NEXT_PUBLIC_BRIDGE_ADDRESS,
-           });
-         } else {
-            return NextResponse.json({
-              success: false,
-              output: "",
-              error: "In production, you must supply NEXT_PUBLIC_BRIDGE_ADDRESS in Netlify environment variables.",
-              deployed: false,
-              contractAddress: null,
-            });
-         }
-      }
-
-      const result = await executeCommand("pnpm", ["run", "node:deploy", networkFlag]);
+      const result = await executeCommand("pnpm", ["run", "node:deploy"]);
       demoRunning = false;
 
       const contractPath = path.join(process.cwd(), "tmp/bridge-address.json");
-      let deployed = false;
+      const deployed = fs.existsSync(contractPath);
+
       let contractAddress = null;
-      
-      if (fs.existsSync(contractPath)) {
-        deployed = true;
+      if (deployed) {
         const data = JSON.parse(fs.readFileSync(contractPath, "utf-8"));
         contractAddress = data.address;
       }
@@ -184,19 +153,19 @@ export async function POST(request: Request) {
       });
     }
 
-    const demoActions: Record<string, string> = {
+    const demoScripts: Record<string, string> = {
       "demo-crisis": "demo:crisis",
-      "demo-flash": "demo:flash",
       "demo-normal": "demo:normal",
       "demo-stealth": "demo:stealth",
+      "demo-flash": "demo:flash",
       "demo-governance": "demo:governance",
       "demo-oracle": "demo:oracle",
       "demo-show": "demo:show",
     };
 
-    if (demoActions[action]) {
+    if (demoScripts[action]) {
       demoRunning = true;
-      const result = await executeCommand("pnpm", ["run", demoActions[action], networkFlag]);
+      const result = await executeCommand("pnpm", ["run", demoScripts[action]]);
       demoRunning = false;
 
       return NextResponse.json({

@@ -1,9 +1,13 @@
 {
 	"schedule": "0 */1 * * * *",
+<<<<<<< Updated upstream
 	"bridgeAddress": "0x9E29b188AC3194a6e056e9947C5bce9761f96BF0",
+=======
+	"bridgeAddress": "0xd6e1afe5cA8D00A2EFC01B89997abE2De47fdfAf",
+>>>>>>> Stashed changes
 	"chainSelectorName": "ethereum-testnet-sepolia",
 	"riskThresholdPercent": 80,
-	"groqApiKey": "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",
+	"groqApiKey": "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",
 	"baselineHistory": [
 		200,
 		205,

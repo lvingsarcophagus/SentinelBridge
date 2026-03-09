@@ -269,11 +269,13 @@ export function evaluateRisk(
 		config.maxOracleDriftPercent,
 	)
 
-	// ── Weighted aggregation ─────────────────────────────
+	// ── Weighted aggregation (adjusted weights for better sensitivity) ─────────────────────────────
+	// Anomaly detection is most reliable for catching attacks, use higher weight
+	// Velocity catches flash loans, drift catches price manipulation
 
-	const VELOCITY_WEIGHT = 0.40
-	const ANOMALY_WEIGHT = 0.35
-	const DRIFT_WEIGHT = 0.25
+	const VELOCITY_WEIGHT = 0.35   // Reduced from 0.40
+	const ANOMALY_WEIGHT = 0.45    // Increased from 0.35 (most reliable signal)
+	const DRIFT_WEIGHT = 0.20      // Reduced from 0.25
 
 	const overallScore = Math.round(
 		velocity.score * VELOCITY_WEIGHT +
@@ -281,11 +283,19 @@ export function evaluateRisk(
 		drift.score * DRIFT_WEIGHT,
 	)
 
-	// Also boost if the static threshold is exceeded
-	const staticBoost = snapshot.riskRatio >= config.staticThresholdPercent ? 30 : 0
+	// Also boost if the static threshold approaches critical levels
+	// Be more aggressive: boost at 60% instead of only at 80%
+	let staticBoost = 0
+	if (snapshot.riskRatio >= config.staticThresholdPercent) {
+		staticBoost = 40  // Increased from 30
+	} else if (snapshot.riskRatio >= config.staticThresholdPercent * 0.75) {
+		// Additional boost when approaching threshold
+		staticBoost = 20
+	}
+	
 	const finalScore = Math.min(100, overallScore + staticBoost)
 
-	// ── Classify risk level ──────────────────────────────
+	// ── Classify risk level (more aggressive thresholds) ──────────────────────────────
 
 	let level: RiskLevel
 	let action: RiskAction
@@ -293,16 +303,25 @@ export function evaluateRisk(
 	const hasAdminHijack = snapshot.unauthorizedGovernanceEvent === true;
 	const hasProofFraud = snapshot.failedProofVerification === true;
 
-	if (hasAdminHijack || hasProofFraud || finalScore >= 80 || snapshot.riskRatio >= config.staticThresholdPercent) {
+	// Improved thresholds - more sensitive to detect attacks early
+	if (hasAdminHijack || hasProofFraud) {
+		// Institutional attacks = immediate critical
 		level = RiskLevel.CRITICAL
 		action = RiskAction.PAUSE
-	} else if (finalScore >= 55) {
+	} else if (finalScore >= 75 || snapshot.riskRatio >= config.staticThresholdPercent) {
+		// High score or exceeded static threshold = critical
+		level = RiskLevel.CRITICAL
+		action = RiskAction.PAUSE
+	} else if (finalScore >= 50) {
+		// Moderate-high score = high risk with pause
 		level = RiskLevel.HIGH
 		action = RiskAction.PAUSE
-	} else if (finalScore >= 30) {
+	} else if (finalScore >= 25) {
+		// Moderate score = medium risk with rate limit
 		level = RiskLevel.MEDIUM
 		action = RiskAction.RATE_LIMIT
 	} else {
+		// Low score = monitor only
 		level = RiskLevel.LOW
 		action = RiskAction.MONITOR
 	}
@@ -315,14 +334,17 @@ export function evaluateRisk(
 		...drift.reasons,
 	]
 
-	if (staticBoost > 0) {
-		reasons.push(`[WARN] Static threshold exceeded: ${snapshot.riskRatio}% >= ${config.staticThresholdPercent}%`)
+	if (staticBoost > 30) {
+		reasons.push(`[ALERT] Static threshold EXCEEDED: ${snapshot.riskRatio}% >= ${config.staticThresholdPercent}%`)
+	} else if (staticBoost > 0) {
+		reasons.push(`[WARN] Static threshold APPROACHING: ${snapshot.riskRatio}% >= ${(config.staticThresholdPercent * 0.75).toFixed(1)}%`)
 	}
+	
 	if (hasAdminHijack) {
-		reasons.push(`[CRITICAL] Governance Hijack Detected: Unauthorized access control event (e.g. OwnershipTransferred) on active contract.`)
+		reasons.push(`[CRITICAL] 🚨 GOVERNANCE HIJACK DETECTED: Unauthorized access control event (e.g. OwnershipTransferred) on active contract`)
 	}
 	if (hasProofFraud) {
-		reasons.push(`[CRITICAL] Proof Fraud Detected: Cross-chain source hash verification failed. Forged message intercepted.`)
+		reasons.push(`[CRITICAL] 🚨 PROOF FRAUD DETECTED: Cross-chain source hash verification FAILED. Forged message intercepted`)
 	}
 
 	if (reasons.length === 0) {

@@ -39,35 +39,61 @@ function buildAnalysisPrompt(
 		riskRatio: number
 	},
 ): string {
-	return `You are a DeFi security analyst AI. Analyze the following cross-chain bridge state for potential exploits.
+	const sourceETH = (BigInt(bridgeState.sourceReserve) / BigInt(1e18)).toString()
+	const destETH = (BigInt(bridgeState.destReserve) / BigInt(1e18)).toString()
+	const lockedETH = (BigInt(bridgeState.lockedAmount) / BigInt(1e18)).toString()
+	
+	return `You are an expert DeFi security analyst specializing in cross-chain bridge vulnerabilities. Your task is to assess this bridge's risk level and identify attack patterns.
 
-## Bridge State Snapshot
-- Source Reserve: ${bridgeState.sourceReserve} wei
-- Dest Reserve: ${bridgeState.destReserve} wei  
-- Locked Amount: ${bridgeState.lockedAmount} wei
-- Static Risk Ratio: ${bridgeState.riskRatio}%
-- Unauthorized Governance Event: ${(bridgeState as any).unauthorizedGovernanceEvent ? "DETECTED" : "None"}
-- Proof Verification Failure: ${(bridgeState as any).failedProofVerification ? "DETECTED" : "None"}
+## CRITICAL ASSESSMENT CRITERIA:
+- ANY risk score >= 75/100 should trigger HIGH or CRITICAL risk level
+- ANY governance event or proof failure = IMMEDIATE CRITICAL
+- Velocity > 50x baseline = CRITICAL (flash loan pattern)
+- Locked amount > 50% of reserves = HIGH (drain pattern)
+- Multiple elevated scores together = ESCALATE TO HIGH/CRITICAL
 
-## Heuristic Analysis Results
-- Liquidity Velocity Score: ${riskScores.velocityScore}/100
-- Statistical Anomaly Score: ${riskScores.anomalyScore}/100 
-- Oracle Drift Score: ${riskScores.oracleDriftScore}/100
-- Overall Weighted Score: ${riskScores.overallScore}/100
-- Heuristic Risk Level: ${riskScores.level}
+## Live Bridge State
+- Source Reserve: ${sourceETH} ETH (${bridgeState.sourceReserve} wei)
+- Destination Reserve: ${destETH} ETH (${bridgeState.destReserve} wei)
+- Locked Amount: ${lockedETH} ETH (${bridgeState.lockedAmount} wei)
+- Risk Ratio: ${bridgeState.riskRatio.toFixed(1)}% (CRITICAL if >= 80%)
+- Governance Compromised: ${(bridgeState as any).unauthorizedGovernanceEvent ? "YES - CRITICAL" : "No"}
+- Proof Failed: ${(bridgeState as any).failedProofVerification ? "YES - CRITICAL" : "No"}
 
-## Detected Signals
-${riskScores.reasons.map((r) => `- ${r}`).join('\n')}
+## Heuristic Scores (0-100 scale)
+- Liquidity Velocity: ${riskScores.velocityScore} (rate-of-change from baseline)
+- Statistical Anomaly: ${riskScores.anomalyScore} (3-sigma deviation detection)
+- Oracle Drift: ${riskScores.oracleDriftScore} (reserve ratio divergence)
+- Overall Weighted: ${riskScores.overallScore} (40% velocity + 35% anomaly + 25% drift)
+- Recommended Level: ${riskScores.level}
 
-## Instructions
-Based on this data, return EXACTLY this JSON format (no markdown, no quotes, no text outside the JSON):
+## Detected Signals & Reasons
+${riskScores.reasons.map((r, i) => `${i + 1}. ${r}`).join('\n')}
+
+## YOUR TASK:
+Analyze the above metrics and identify the attack pattern. Consider:
+- Is this a flash loan (sudden spike)?
+- Is this a slow drain (steady velocity)?
+- Is this reentrancy or price manipulation (ratio divergence)?
+- Are there institutional attack vectors (governance/proof)?
+
+## RESPONSE FORMAT - Return ONLY valid JSON, no markdown, no extra text:
 {
-  "riskLevel": "LOW|MEDIUM|HIGH|CRITICAL",
-  "attackPattern": "none|flash_loan|slow_drain|reentrancy|price_manipulation|state_spoofing|unknown",
-  "confidence": <0-100>,
-  "reasoning": "<one sentence explaining your assessment>",
-  "recommendation": "<one sentence: what action to take>"
-}`
+  "aiRiskLevel": "LOW",
+  "attackPattern": "none",
+  "confidence": 90,
+  "reasoning": "Single sentence explaining why you chose this risk level based on the metrics.",
+  "recommendation": "One sentence with recommended action: MONITOR, RATE_LIMIT, or PAUSE"
+}
+
+## FIELD REQUIREMENTS:
+- aiRiskLevel: MUST be exactly one of: LOW, MEDIUM, HIGH, CRITICAL
+- attackPattern: MUST be one of: none, flash_loan, slow_drain, reentrancy, price_manipulation, state_spoofing, unknown
+- confidence: Integer 0-100 (your confidence in this assessment)
+- reasoning: Explain your decision in one clear sentence
+- recommendation: State the action in one sentence
+
+Return ONLY the JSON object. No other text before or after.`
 }
 
 
@@ -155,6 +181,8 @@ export function analyzeWithGroq<C>(
 			? httpResponse.body 
 			: Buffer.from(httpResponse.body as Uint8Array).toString('utf-8')
 
+		runtime.log(`[DEBUG] Raw Groq response: ${bodyStr.substring(0, 200)}...`)
+
 		const groqResult = JSON.parse(bodyStr)
 
 		if (groqResult.error) {
@@ -163,23 +191,78 @@ export function analyzeWithGroq<C>(
 		}
 
 		// Groq returns the result in choices[0].message.content
-		const contentStr = groqResult.choices?.[0]?.message?.content || '{}'
+		const contentStr = groqResult.choices?.[0]?.message?.content || ''
 		
-		// Remove markdown formatting if present
-		const cleanContent = contentStr.replace(/```json\n?|\n?```/g, '').trim()
-		const parsedAnalysis = JSON.parse(cleanContent)
+		if (!contentStr) {
+			runtime.log('[ERROR] Groq returned empty content')
+			return getFallbackAnalysis(riskScores)
+		}
+
+		runtime.log(`[DEBUG] Content from Groq: ${contentStr.substring(0, 300)}...`)
+		
+		// Extract JSON - handle markdown wrappers and various formatting
+		let jsonObj: any
+		
+		try {
+			// Try direct parse first
+			jsonObj = JSON.parse(contentStr)
+		} catch (parseError) {
+			runtime.log(`[DEBUG] Direct JSON parse failed, attempting extraction...`)
+			
+			// Try to extract JSON from markdown code blocks
+			let cleanContent = contentStr
+				.replace(/^```json\s*/gm, '')
+				.replace(/^```\s*/gm, '')
+				.replace(/\s*```$/gm, '')
+				.trim()
+			
+			// Extract JSON object using regex
+			const jsonMatch = cleanContent.match(/\{[\s\S]*\}/)
+			if (jsonMatch) {
+				try {
+					jsonObj = JSON.parse(jsonMatch[0])
+					runtime.log(`[DEBUG] Successfully extracted JSON from response`)
+				} catch (innerError) {
+					runtime.log(`[ERROR] Failed to parse extracted JSON: ${innerError}`)
+					return getFallbackAnalysis(riskScores)
+				}
+			} else {
+				runtime.log(`[ERROR] No JSON object found in Groq response`)
+				return getFallbackAnalysis(riskScores)
+			}
+		}
+
+		// Validate and normalize the response
+		const aiRiskLevel = String(jsonObj.aiRiskLevel || '').toUpperCase()
+		const validRiskLevels = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
+		
+		if (!validRiskLevels.includes(aiRiskLevel)) {
+			runtime.log(`[WARN] Invalid risk level from AI: ${aiRiskLevel}, defaulting to heuristic`)
+			return getFallbackAnalysis(riskScores)
+		}
+
+		const attackPattern = String(jsonObj.attackPattern || 'unknown').toLowerCase()
+		const validPatterns = ['none', 'flash_loan', 'slow_drain', 'reentrancy', 'price_manipulation', 'state_spoofing', 'unknown']
+		
+		if (!validPatterns.includes(attackPattern)) {
+			runtime.log(`[WARN] Invalid attack pattern from AI: ${attackPattern}`)
+		}
+
+		// Parse confidence as number
+		let confidence = parseInt(jsonObj.confidence, 10) || 0
+		confidence = Math.max(0, Math.min(100, confidence))
 
 		const finalAnalysis = {
-			aiRiskLevel: parsedAnalysis.aiRiskLevel || riskScores.level,
-			attackPattern: parsedAnalysis.attackPattern || 'unknown',
-			confidence: parsedAnalysis.confidence || 0,
-			reasoning: parsedAnalysis.reasoning || 'No reasoning provided',
-			recommendation: parsedAnalysis.recommendation || `Heuristic action: ${riskScores.action}`,
+			aiRiskLevel,
+			attackPattern: validPatterns.includes(attackPattern) ? attackPattern : 'unknown',
+			confidence,
+			reasoning: String(jsonObj.reasoning || 'AI assessment based on heuristic metrics'),
+			recommendation: String(jsonObj.recommendation || `Heuristic action: ${riskScores.action}`),
 			available: true,
 		}
 
 		runtime.log(
-			`[AI_RESULT] Assessment:\n` +
+			`[AI_RESULT] ✓ Assessment:\n` +
 			`   Risk Level:    ${finalAnalysis.aiRiskLevel}\n` +
 			`   Attack Pattern: ${finalAnalysis.attackPattern}\n` +
 			`   Confidence:    ${finalAnalysis.confidence}%\n` +
@@ -189,7 +272,7 @@ export function analyzeWithGroq<C>(
 
 		return finalAnalysis
 	} catch (error) {
-		runtime.log(`[ERROR] Failed to parse Groq response: ${error}`)
+		runtime.log(`[ERROR] Critical failure in Groq response handling: ${error}`)
 		return getFallbackAnalysis(riskScores)
 	}
 }

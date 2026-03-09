@@ -38,7 +38,14 @@ export function ActivityLog() {
           type: classifyLog(msg),
           timestamp: data.timestamp,
         }));
-        setLogs(entries);
+        
+        setLogs(prev => {
+          // Flatten prev messages to check for existence
+          const prevMessages = new Set(prev.map(p => p.message));
+          const newEntries = entries.filter(e => !prevMessages.has(e.message));
+          if (newEntries.length === 0) return prev;
+          return [...prev, ...newEntries].slice(-50); // Keep last 50
+        });
       } catch {
         setLogs([
           {
@@ -53,7 +60,7 @@ export function ActivityLog() {
     };
 
     fetchLogs();
-    const interval = setInterval(fetchLogs, 8000);
+    const interval = setInterval(fetchLogs, 3000);
     return () => clearInterval(interval);
   }, []);
 

@@ -3,6 +3,8 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import fs from "fs";
 import path from "path";
+import { getCachedAiResponse, setCachedAiResponse } from "@/lib/cache";
+import { callGroq } from "@/lib/groq-client";
 
 const execAsync = promisify(exec);
 
@@ -11,7 +13,16 @@ export async function GET() {
     // 1. Fetch current bridge state via local RPC
     const bridgeAddressPath = path.join(process.cwd(), "tmp/bridge-address.json");
     if (!fs.existsSync(bridgeAddressPath)) {
-      return NextResponse.json({ error: "Contract not deployed" }, { status: 400 });
+      return NextResponse.json({ 
+        ok: false, 
+        isPaused: false,
+        riskRatio: 0,
+        sourceReserve: "0.0",
+        destReserve: "0.0",
+        targetLocked: "0.0",
+        lastCheck: new Date().toISOString(),
+        error: "Contract not deployed. Please run 'pnpm run node:deploy'."
+      });
     }
     const { address: contractAddress } = JSON.parse(fs.readFileSync(bridgeAddressPath, "utf-8"));
 
@@ -25,28 +36,40 @@ import { ethers } from "ethers";
 import fs from "fs";
 
 async function main() {
-  const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
-  const abi = JSON.parse(fs.readFileSync("${abiPath.replace(/\\/g, '/')}"))["abi"];
-  const contract = new ethers.Contract("${contractAddress}", abi, provider);
-  const riskRatio = await contract.getRiskRatio();
-  const source = await contract.getSourceReserves();
-  const dest = await contract.getDestReserves();
-  const locked = await contract.getLockedAmount();
-  const paused = await contract.isPaused();
-  const govCompromised = await contract.governanceCompromised();
-  const proofFailed = await contract.failedProof();
-  console.log(JSON.stringify({
-    ok: true,
-    isPaused: paused,
-    riskRatio: Number(riskRatio),
-    sourceReserve: ethers.formatEther(source),
-    destReserve: ethers.formatEther(dest),
-    targetLocked: ethers.formatEther(locked),
-    lastCheck: new Date().toISOString(),
-    lastTransactionHash: null,
-    governanceCompromised: govCompromised,
-    failedProof: proofFailed
-  }));
+  try {
+    const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+    // Check if node is actually responsive
+    await provider.getNetwork();
+    
+    const abi = JSON.parse(fs.readFileSync("${abiPath.replace(/\\/g, '/')}"))["abi"];
+    const contract = new ethers.Contract("${contractAddress}", abi, provider);
+    
+    // Attempt calls, default to null/zero if they fail (contract might not be at this address)
+    let riskRatio = 0, source = 0n, dest = 0n, locked = 0n, paused = false, govCompromised = false, proofFailed = false;
+    
+    try { riskRatio = await contract.getRiskRatio(); } catch(e) {}
+    try { source = await contract.getSourceReserves(); } catch(e) {}
+    try { dest = await contract.getDestReserves(); } catch(e) {}
+    try { locked = await contract.getLockedAmount(); } catch(e) {}
+    try { paused = await contract.isPaused(); } catch(e) {}
+    try { govCompromised = await contract.governanceCompromised(); } catch(e) {}
+    try { proofFailed = await contract.failedProof(); } catch(e) {}
+
+    console.log(JSON.stringify({
+      ok: true,
+      isPaused: paused,
+      riskRatio: Number(riskRatio),
+      sourceReserve: ethers.formatEther(source),
+      destReserve: ethers.formatEther(dest),
+      targetLocked: ethers.formatEther(locked),
+      lastCheck: new Date().toISOString(),
+      lastTransactionHash: null,
+      governanceCompromised: govCompromised,
+      failedProof: proofFailed
+    }));
+  } catch (err) {
+    console.log(JSON.stringify({ ok: false, error: err.message }));
+  }
 }
 main();
     `;
@@ -56,11 +79,33 @@ main();
 
     let onchainState;
     try {
-      const { stdout } = await execAsync(`node ${tmpScriptPath}`);
+      const { stdout } = await execAsync(`node "${tmpScriptPath}"`);
       onchainState = JSON.parse(stdout);
+      
+      if (!onchainState.ok) {
+        return NextResponse.json({ 
+          ok: false, 
+          isPaused: false,
+          riskRatio: 0,
+          sourceReserve: "0.0",
+          destReserve: "0.0",
+          targetLocked: "0.0",
+          lastCheck: new Date().toISOString(),
+          error: "Node connection failed"
+        });
+      }
     } catch (err: any) {
-      console.error("fetch-status script failed:", err.message);
-      return NextResponse.json({ error: "Failed to read state" }, { status: 500 });
+      console.error("fetch-status execution failed:", err.message);
+      return NextResponse.json({ 
+        ok: false, 
+        isPaused: false,
+        riskRatio: 0,
+        sourceReserve: "0.0",
+        destReserve: "0.0",
+        targetLocked: "0.0",
+        lastCheck: new Date().toISOString(),
+        error: "Script execution failed" 
+      });
     } finally {
       if (fs.existsSync(tmpScriptPath)) {
         fs.unlinkSync(tmpScriptPath);
@@ -81,13 +126,19 @@ main();
       const groqKey = configData.groqApiKey;
 
       if (groqKey && groqKey !== "gsk_...") {
-        // Calculate velocity indicators for the AI
-        const baselineLocked = 200; // baseline locked amount in ETH
         const currentLocked = parseFloat(onchainState.targetLocked);
-        const lockedDelta = currentLocked - baselineLocked;
+        const currentSource = parseFloat(onchainState.sourceReserve);
+        
+        const lockedDelta = currentLocked - 200; 
+        const sourceDelta = 1000 - currentSource; 
+        
         let velocityIndicator = "NORMAL";
-        if (lockedDelta >= 500) velocityIndicator = "SINGLE_BLOCK_SPIKE";
-        else if (lockedDelta >= 50) velocityIndicator = "GRADUAL_INCREASE";
+        if (onchainState.governanceCompromised) velocityIndicator = "GOV_HIJACK";
+        else if (onchainState.failedProof) velocityIndicator = "PROOF_FAIL";
+        else if (sourceDelta >= 500) velocityIndicator = "MASSIVE_EXPLOIT";
+        else if (lockedDelta >= 600) velocityIndicator = "FLASH_LOAN";
+        else if (lockedDelta >= 50) velocityIndicator = "STEALTH_DRAIN";
+        else if (lockedDelta > 5 || sourceDelta > 5) velocityIndicator = "NORMAL_TRAFFIC";
 
         const systemPrompt = `You are SentinelBridge AI, an advanced on-chain risk analyst. 
 Analyze the following live bridge state and provide a JSON response exactly matching this structure, no markdown:
@@ -99,11 +150,12 @@ Analyze the following live bridge state and provide a JSON response exactly matc
 }
 
 CRITICAL CLASSIFICATION RULES:
-- If Velocity Indicator is "SINGLE_BLOCK_SPIKE" (delta >= 500 ETH in one observation): assessment MUST be "FLASH LOAN CRISIS" or "FLASH CRISIS"
-- If Velocity Indicator is "GRADUAL_INCREASE" (delta 50-500 ETH over multiple observations): assessment should be "STEALTH DRAIN" 
-- If Governance Event is CRITICAL_DETECTED: assessment should be "GOVERNANCE HIJACK"
-- If Proof Failure is CRITICAL_DETECTED: assessment should be "PROOF FRAUD"
-- If Risk < 30% and velocity is NORMAL: assessment should be "NORMAL CLEAR"
+- If Velocity Indicator is "MASSIVE_EXPLOIT": assessment MUST be "MASSIVE EXPLOIT". recommendation: "EMERGENCY_PAUSE".
+- If Velocity Indicator is "FLASH_LOAN": assessment MUST be "FLASH LOAN ATTACK". recommendation: "EMERGENCY_PAUSE".
+- If Velocity Indicator is "STEALTH_DRAIN": assessment MUST be "STEALTH DRAIN". recommendation: "RATE_LIMIT".
+- If Velocity Indicator is "GOV_HIJACK": assessment MUST be "GOVERNANCE HIJACK". recommendation: "EMERGENCY_PAUSE".
+- If Velocity Indicator is "PROOF_FAIL": assessment MUST be "PROOF FRAUD". recommendation: "EMERGENCY_PAUSE".
+- If Velocity Indicator is "NORMAL_TRAFFIC" or "NORMAL": assessment should be "NORMAL TRAFFIC". recommendation: "MONITOR".
 
 Baseline normal Risk Ratio is ~20% (200 ETH locked / 1000 ETH reserves). Hard pause is at 80%.
 
@@ -118,26 +170,45 @@ Live Telemetry:
 - Unauthorized Governance Event: ${onchainState.governanceCompromised ? "CRITICAL_DETECTED" : "None"}
 - Proof Verification Failure: ${onchainState.failedProof ? "CRITICAL_DETECTED" : "None"}`;
 
-        try {
-          const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${groqKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: "llama-3.1-8b-instant",
-              messages: [{ role: "user", content: systemPrompt }],
-              temperature: 0.1,
-            }),
-          });
-
-          if (groqRes.ok) {
-            const groqData = await groqRes.json();
-            aiResponse = JSON.parse(groqData.choices[0].message.content);
+        const cacheKey = `status-ai-${velocityIndicator}-${onchainState.riskRatio}-${onchainState.isPaused}`;
+        const cachedResponse = getCachedAiResponse(cacheKey, 60); // Cache for 1 min
+        
+        if (cachedResponse) {
+          aiResponse = cachedResponse;
+          console.log("[INFO] Using cached AI status response");
+        } else {
+          try {
+            const content = await callGroq(groqKey, systemPrompt);
+              
+            try {
+              aiResponse = JSON.parse(content);
+            } catch (e) {
+              const jsonMatch = content.match(/\{[\s\S]*\}/);
+              if (jsonMatch) {
+                try {
+                  aiResponse = JSON.parse(jsonMatch[0]);
+                } catch (innerE) {
+                  console.error("Failed to parse extracted JSON in status", innerE);
+                }
+              }
+            }
+            if (aiResponse.assessment !== "SYSTEM OFFLINE") {
+               setCachedAiResponse(cacheKey, aiResponse);
+            }
+          } catch (e) {
+            console.error("Groq status integration failed:", e);
+            aiResponse = {
+              assessment: velocityIndicator === "MASSIVE_EXPLOIT" ? "MASSIVE EXPLOIT" : 
+                          velocityIndicator === "FLASH_LOAN" ? "FLASH LOAN ATTACK" :
+                          velocityIndicator === "STEALTH_DRAIN" ? "STEALTH DRAIN" :
+                          velocityIndicator === "GOV_HIJACK" ? "GOVERNANCE HIJACK" :
+                          velocityIndicator === "PROOF_FAIL" ? "PROOF FRAUD" : "NORMAL TRAFFIC",
+              confidence: 85,
+              details: "AI API unavailable. Using heuristic fallback analysis.",
+              recommendation: velocityIndicator === "NORMAL_TRAFFIC" || velocityIndicator === "NORMAL" ? "MONITOR" : 
+                              velocityIndicator === "STEALTH_DRAIN" ? "RATE_LIMIT" : "EMERGENCY_PAUSE"
+            };
           }
-        } catch (e) {
-          console.error("Groq status integration failed:", e);
         }
       }
     }

@@ -233,27 +233,72 @@ const onCronTrigger = (runtime: Runtime<Config>): string => {
 
 	runtime.log('\n[RESPONSE] Step 4: Executing response action...')
 
-	// Use AI assessment to potentially escalate the heuristic action
+	// ── AI-Enhanced Decision Logic ──────────────────────────────────
+	// Integrate AI assessment with heuristic scores for better accuracy
+	
 	let finalAction = riskScores.action
-	if (
-		aiAnalysis.available &&
-		aiAnalysis.confidence >= 70 &&
-		(aiAnalysis.aiRiskLevel === 'CRITICAL' || aiAnalysis.aiRiskLevel === 'HIGH')
-	) {
-		finalAction = RiskAction.PAUSE
-		runtime.log(`   [AI OVERRIDE] AI escalated action to PAUSE (confidence: ${aiAnalysis.confidence}%)`)
+	let aiOverrideReason = ''
+
+	if (aiAnalysis.available && aiAnalysis.aiRiskLevel) {
+		const aiLevel = aiAnalysis.aiRiskLevel
+		const aiConfidence = aiAnalysis.confidence
+		const heuristicLevel = riskScores.level
+
+		// Map risk levels to numeric scores for comparison
+		const levelScore: Record<string, number> = {
+			'LOW': 0,
+			'MEDIUM': 1,
+			'HIGH': 2,
+			'CRITICAL': 3,
+		}
+
+		const heuristicScore = levelScore[heuristicLevel] || 0
+		const aiScore = levelScore[aiLevel] || 0
+
+		// Decision rules:
+		// 1. If AI is CRITICAL regardless of heuristic, PAUSE immediately
+		if (aiScore === 3 && aiConfidence >= 50) {
+			finalAction = RiskAction.PAUSE
+			aiOverrideReason = `AI detected CRITICAL risk (${aiAnalysis.attackPattern}, ${aiConfidence}% confidence) — escalating to PAUSE`
+		}
+		// 2. If AI is HIGH and confidence >= 60, escalate if heuristic < HIGH
+		else if (aiScore === 2 && aiConfidence >= 60 && heuristicScore < 2) {
+			finalAction = RiskAction.PAUSE
+			aiOverrideReason = `AI detected HIGH risk pattern (${aiAnalysis.attackPattern}, ${aiConfidence}% confidence) — escalating from ${heuristicLevel} to PAUSE`
+		}
+		// 3. If AI is MEDIUM and confidence >= 75, and heuristic is MEDIUM, escalate to HIGH
+		else if (aiScore === 1 && aiConfidence >= 75 && heuristicScore === 1) {
+			finalAction = RiskAction.PAUSE
+			aiOverrideReason = `AI confidence (${aiConfidence}%) confirms MEDIUM risk → escalating to PAUSE`
+		}
+		// 4. If heuristic is HIGH/CRITICAL but AI says LOW/MEDIUM with low confidence, 
+		//    trust heuristic (false negatives likely from AI)
+		else if (heuristicScore >= 2 && aiScore < heuristicScore && aiConfidence < 40) {
+			finalAction = RiskAction.PAUSE
+			aiOverrideReason = `Heuristic risk (${heuristicLevel}) is stronger than AI assessment (confidence: ${aiConfidence}%) — trusting heuristic`
+		}
+
+		if (aiOverrideReason) {
+			runtime.log(`   [AI ANALYSIS] ${aiOverrideReason}`)
+		} else {
+			runtime.log(`   [AI ASSESSMENT] ${aiLevel} risk, ${aiAnalysis.attackPattern} pattern (${aiConfidence}% confidence) — aligned with heuristics`)
+		}
+	} else if (aiAnalysis) {
+		runtime.log(`   [AI STATUS] AI analysis unavailable — using heuristic action: ${riskScores.action}`)
 	}
 
 	switch (finalAction) {
 		case RiskAction.PAUSE: {
 			runtime.log(
 				`\n[EMERGENCY] =======================================================\n` +
-				`   CIRCUIT BREAKER ACTIVATED\n` +
+				`   🚨 CIRCUIT BREAKER ACTIVATED 🚨\n` +
 				`   Risk Level: ${riskScores.level} | Score: ${riskScores.overallScore}/100\n` +
 				`   Static Risk: ${riskRatio.toString()}%\n` +
 				(aiAnalysis.available
-					? `   AI Pattern: ${aiAnalysis.attackPattern} (${aiAnalysis.confidence}% confidence)\n`
+					? `   AI Pattern: ${aiAnalysis.attackPattern} (${aiAnalysis.confidence}% confidence)\n` +
+					  `   AI Reasoning: ${aiAnalysis.reasoning}\n`
 					: '') +
+				(aiOverrideReason ? `   Override Reason: ${aiOverrideReason}\n` : '') +
 				`   Action: bridge.pause() — Emergency shutdown\n` +
 				`===================================================================`,
 			)

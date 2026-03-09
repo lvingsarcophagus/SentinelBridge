@@ -9,6 +9,9 @@
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
     "plugin:@typescript-eslint/strict",
+    "plugin:react/recommended",
+    "plugin:react-hooks/recommended",
+    "plugin:jsx-a11y/recommended",
     "next/core-web-vitals"
   ],
   "parser": "@typescript-eslint/parser",
@@ -21,7 +24,10 @@
     "project": "./tsconfig.json"
   },
   "plugins": [
-    "@typescript-eslint"
+    "@typescript-eslint",
+    "react",
+    "react-hooks",
+    "jsx-a11y"
   ],
   "settings": {
     "react": {
@@ -29,21 +35,38 @@
     }
   },
   "rules": {
-    "@typescript-eslint/explicit-function-return-types": "off",
+    "@typescript-eslint/explicit-function-return-types": "warn",
     "@typescript-eslint/no-explicit-any": "warn",
-    "@typescript-eslint/no-unused-vars": "off",
-    "@typescript-eslint/no-floating-promises": "off",
-    "@typescript-eslint/no-misused-promises": "off",
-    "@typescript-eslint/no-non-null-assertion": "off",
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_"
+      }
+    ],
+    "@typescript-eslint/no-floating-promises": "warn",
+    "@typescript-eslint/no-misused-promises": "warn",
     "react/react-in-jsx-scope": "off",
-    "react/no-unescaped-entities": "off",
-    "react/jsx-no-comment-textnodes": "off",
-    "@next/next/no-html-link-for-pages": "off",
-    "no-console": "off",
-    "semi": "off",
-    "quotes": "off",
-    "indent": "off",
-    "prefer-const": "off"
+    "no-console": [
+      "warn",
+      {
+        "allow": [
+          "warn",
+          "error"
+        ]
+      }
+    ],
+    "semi": [
+      "error",
+      "always"
+    ],
+    "quotes": [
+      "error",
+      "double"
+    ],
+    "indent": [
+      "error",
+      2
+    ]
   },
   "overrides": [
     {
@@ -54,16 +77,5 @@
         "@typescript-eslint/no-explicit-any": "off"
       }
     }
-  ],
-  "ignorePatterns": [
-    "dist/",
-    "artifacts/",
-    "workflow-dist/",
-    "scripts/",
-    "tests/",
-    "my-workflow/",
-    "*.js",
-    "*.d.ts",
-    "hardhat.config.ts"
   ]
 }

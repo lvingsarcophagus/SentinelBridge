@@ -1,9 +1,0 @@
-
-> sentinel-bridge-watchdog@1.0.0 workflow:build C:\Users\nayan\OneDrive\Desktop\NJ_PROJ_2026\SentinelBridge
-> tsc --project tsconfig.workflow.json
-
-src/workflows/sentinel-bridge/groq-analyzer.ts(15,2): error TS6133: 'ok' is declared but its value is never read.
-src/workflows/sentinel-bridge/groq-analyzer.ts(16,2): error TS6133: 'text' is declared but its value is never read.
-src/workflows/sentinel-bridge/groq-analyzer.ts(17,7): error TS6133: 'HTTPSendRequester' is declared but its value is never read.
-src/workflows/sentinel-bridge/groq-analyzer.ts(33,11): error TS6196: 'GroqChatResponse' is declared but never used.
-ΓÇëELIFECYCLEΓÇë Command failed with exit code 2.

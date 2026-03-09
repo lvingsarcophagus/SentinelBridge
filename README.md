@@ -1,440 +1,523 @@
-# SentinelBridge - Liquidity Watchdog
+<div align="center">
+  <img src="public/sentinel_logo_new_1772987283819.png" alt="SentinelBridge Logo" width="150"/>
+  <h1>🛡️ SentinelBridge</h1>
+  <p><strong>Institutional-Grade Liquidity Watchdog & Automated Circuit Breaker</strong></p>
+  <p><em>Built with Chainlink CRE & Groq Fast AI for the Convergence Hackathon 2026</em></p>
 
-**Automated Circuit Breaker for Cross-Chain Bridge Liquidity Monitoring**
+  ![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)
+  ![Chainlink CRE](https://img.shields.io/badge/Chainlink-CRE-375BD2?logo=chainlink)
+  ![Groq AI](https://img.shields.io/badge/Groq-LLaMA_3.1-orange)
+  ![Solidity](https://img.shields.io/badge/Solidity-0.8.20-363636?logo=solidity)
+  ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript)
+  ![License](https://img.shields.io/badge/License-MIT-green)
+</div>
 
-A Next.js-based monitoring dashboard with an integrated Chainlink Runtime Environment (CRE) workflow for protecting cross-chain bridge protocols from liquidity depletion. Built for the Chainlink Convergence Hackathon.
+<hr/>
 
----
+## Table of Contents
 
-## 🚀 **Get Started in 5 Minutes**
-
-### **Step 1: Start Hardhat Node (Terminal 1)**
-```bash
-pnpm run node:start
-```
-Will output: `Started HTTP and WebSocket JSON-RPC server at http://127.0.0.1:8545/`
-
-### **Step 2: Start Dashboard (Terminal 2)**
-```bash
-pnpm run dev
-```
-Will output: `Local: http://localhost:3000 (or 3002 if port 3000 in use)`
-
-### **Step 3: Open Demo Controller in Browser**
-Go to: **http://localhost:3000/demo-controller** or **http://localhost:3002/demo-controller**
-
-Then click:
-1. 🚀 **"Start Hardhat Node"** (or skip if already running from step 1)
-2. 📝 **"Deploy Contract"** 
-3. 🚨 **"Crisis Demo"** - Watch the 4-phase circuit breaker in action!
-
-**That's it!** You'll see:
-- ✅ Deploy status with contract address
-- ✅ 4-phase crisis scenario with live output
-- ✅ Automatic circuit breaker activation at 95% risk
-- ✅ Activity log showing all actions
-
-**Command-Line Alternative:**
-```bash
-pnpm run node:deploy          # Deploy contract (auto-syncs CRE config)
-pnpm run demo:crisis          # Run crisis demo (4-phase circuit breaker)
-pnpm run demo:flash           # Flash loan attack → watchdog pauses bridge
-pnpm run demo:stealth         # Stealth drain detection (bypasses static threshold)
-pnpm run demo:governance      # Governance hijack → VETO queued
-pnpm run demo:normal          # Show normal operation
-pnpm run demo:show            # Display current bridge state
-```
-
-**📖 Detailed Guides:** See [QUICK_START.md](./QUICK_START.md) | [HARDHAT_LOCAL.md](./HARDHAT_LOCAL.md)
+- [The Problem](#-the-problem)
+- [The Solution](#-the-solution)
+- [Architecture](#-architecture)
+- [Chainlink CRE Workflow — Deep Dive](#%EF%B8%8F-chainlink-cre-workflow--deep-dive)
+- [Core Features](#-core-features)
+- [Tech Stack](#-technology-stack)
+- [Project Structure](#-project-structure)
+- [Quick Start Guide](#-quick-start-guide)
+- [Running Simulations](#-running-simulations-demo-controller)
+- [API Endpoints](#-api-endpoints)
+- [Smart Contract](#-smart-contract-sourcebridge)
+- [Security Considerations](#-security-considerations)
+- [License](#-license)
 
 ---
 
-## 🎯 Technical Overview (Hackathon Judges Start Here)
+## 🎯 The Problem
 
-SentinelBridge represents a new paradigm in cross-chain security: **Active AI Defense via the Chainlink Runtime Environment (CRE).**
+Cross-chain bridges are the lifeblood of interoperability but remain the most vulnerable attack vector in DeFi, having lost over **$2.8B** to exploits (Ronin $625M, Wormhole $326M, Nomad $190M, Multichain $126M). Traditional security systems respond to hacks *after* the funds have left the contract — by then, it is too late.
 
-Most bridges rely on static thresholds (e.g., "Pause if TVL drops 50%"). Sophisticated attackers bypass these using slow-drains or flash-loan timing. We built a Watchdog that relies on **AI-driven intent analysis** to detect *anomalous state changes* rather than just volume drops. 
+**The gap**: No existing solution combines *on-chain monitoring*, *behavioral analysis*, *AI threat classification*, and *automated emergency response* into a single trustless pipeline.
 
-### 1. The "CRE + AI" Architecture
-We built our Watchdog completely on the new **Chainlink Runtime Environment** (`@chainlink/cre-sdk` v1.1.4).
-- **`CronCapability`** triggers the watchdog on a configurable schedule (`workflow.yaml`)
-- **`EVMClient`** reads on-chain state (`getSourceReserves`, `getLockedAmount`, `getRiskRatio`, `isPaused`) using `callContract()` + `encodeCallMsg()` via `viem`
-- **`HTTPClient`** streams live bridge telemetry to **Groq's LLaMA-3.1-8B-Instant** for AI intent analysis
-- **Why Groq?** Security circuit breakers cannot wait 5 seconds for a GPT-4 response. Groq's ultra-low latency inference classifies the attack pattern before the next block is mined.
+---
 
-### 2. The State Change (The Defense)
-If the CRE Risk Engine (combining heuristic velocity scoring and Groq's AI intent analysis) detects an exploit (e.g., `STEALTH DRAIN` or `FLASH CRISIS`), the workflow executes a definitive **on-chain state change via `EVMClient.callContract()`**: calling `bridge.pause()` on the `SourceBridge.sol` smart contract. This physically prevents further liquidity depletion.
+## 🛡️ The Solution
 
-### 3. Run the CRE Simulation
-```bash
-# Run the official CRE SDK workflow simulation
-pnpm run simulate
+**SentinelBridge** is a proactive, AI-powered liquidity watchdog that monitors bridge reserves in real-time. By leveraging **Chainlink's CRE (Chainlink Runtime Environment)** and **Groq's LLaMA 3.1 AI**, it acts as an automated circuit breaker that pauses the bridge *during* an exploit — not after.
 
-# Or directly:
-cre workflow simulate ./src/workflows/sentinel-bridge --target local-simulation --non-interactive
-```
+### Listen → Evaluate → Act
 
-> **Note:** We also built a full visual "Demo Controller" dashboard at `/demo-controller` that runs realistic exploit scenarios against a local Hardhat node and streams Groq AI deductions live. See the Quick Start above.
+| Phase | Engine | What It Does |
+|-------|--------|-------------|
+| **Listen** | CRE `CronCapability` | Triggers every 60 seconds, reads 5 on-chain state variables via `EVMClient` |
+| **Evaluate** | Heuristic Risk Engine + Groq AI | Multi-dimensional scoring (velocity 35%, anomaly 45%, oracle drift 20%) plus LLaMA AI classification |
+| **Act** | CRE `EVMClient` | Calls `bridge.pause()` on-chain if AI confidence ≥ 0.8 and risk is CRITICAL |
 
-## 📋 Project Structure
+---
+
+## 🏗️ Architecture
 
 ```
-sentinel-bridge-watchdog/
-├── src/workflows/sentinel-bridge/     # ★ CRE WORKFLOW (start here for judges)
-│   ├── index.ts                      # Main CRE handler (CronCapability + EVMClient)
-│   ├── risk-engine.ts                # Multi-dimensional behavioral risk scoring
-│   ├── groq-analyzer.ts             # AI threat analysis via CRE HTTPClient
-│   ├── abi.ts                        # SourceBridge ABI for CRE
-│   ├── config.json                   # CRE config (bridge address, thresholds)
-│   └── workflow.yaml                 # CRE simulation settings
-├── contracts/                        # Solidity Contracts
-│   └── SourceBridge.sol              # Mock bridge with pause/unpause
-├── scripts/                          # Hardhat Demo Scripts
-│   ├── deploy-bridge.ts              # Deploy contract (auto-syncs CRE config)
-│   ├── demo-crisis.ts                # Crisis: reserves drain → circuit breaker
-│   ├── demo-flash-loan.ts           # Flash loan: velocity anomaly → pause
-│   ├── demo-stealth-drain.ts        # Stealth drain: bypasses 80% threshold
-│   ├── demo-governance.ts           # Governance hijack → VETO
-│   ├── demo-normal.ts                # Normal healthy operation
-│   └── show-bridge-state.ts          # Display current bridge state
-├── app/                              # Next.js Dashboard
-│   ├── page.tsx                      # Main monitoring dashboard
-│   ├── demo-controller/page.tsx     # Visual demo controller
-│   ├── docs/page.tsx                # Documentation page
+┌─────────────────────────────────────────────────────────────────────┐
+│                     CHAINLINK CRE RUNTIME                           │
+│  ┌──────────────┐   ┌──────────────────┐   ┌────────────────────┐  │
+│  │ CronCapability│──▶│   onCronTrigger  │──▶│    EVMClient       │  │
+│  │ (every 60s)  │   │   (orchestrator)  │   │ callContract()     │  │
+│  └──────────────┘   └────────┬─────────┘   │ - getSourceReserves│  │
+│                              │              │ - getDestReserves  │  │
+│                     ┌────────▼─────────┐   │ - getLockedAmount  │  │
+│                     │   Risk Engine    │   │ - getRiskRatio     │  │
+│                     │ (Heuristic Score)│   │ - isPaused         │  │
+│                     │ Velocity  35%    │   │ - pause()          │  │
+│                     │ Anomaly   45%    │   └────────────────────┘  │
+│                     │ OracleDrift 20%  │                           │
+│                     └────────┬─────────┘                           │
+│                              │                                     │
+│                     ┌────────▼─────────┐                           │
+│                     │  Groq Analyzer   │                           │
+│                     │  (HTTPClient)    │                           │
+│                     │ LLaMA-3.1-8b    │                           │
+│                     │ Threat Classify  │                           │
+│                     └────────┬─────────┘                           │
+│                              │                                     │
+│                     ┌────────▼─────────┐                           │
+│                     │ Decision Engine  │                           │
+│                     │ MONITOR / PAUSE  │                           │
+│                     │ RATE_LIMIT       │                           │
+│                     └──────────────────┘                           │
+└─────────────────────────────────────────────────────────────────────┘
+         │                                           │
+         ▼                                           ▼
+┌──────────────────┐                     ┌────────────────────────┐
+│  SourceBridge.sol │                     │   Next.js Dashboard    │
+│  (Hardhat/EVM)   │                     │   /dashboard           │
+│  Solidity 0.8.20 │                     │   /demo-controller     │
+└──────────────────┘                     └────────────────────────┘
+```
+
+---
+
+## ⛓️ Chainlink CRE Workflow — Deep Dive
+
+> **This is the core of the project.** The entire CRE workflow lives in `src/workflows/sentinel-bridge/`.
+
+### File Map
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| `index.ts` | 322 | Main orchestrator — cron trigger, state reads, risk evaluation, AI call, pause execution |
+| `risk-engine.ts` | 315 | Multi-dimensional heuristic scoring engine |
+| `groq-analyzer.ts` | 245 | AI threat classification via CRE `HTTPClient` → Groq API |
+| `abi.ts` | 47 | Contract ABI for `SourceBridge.sol` |
+| `config.json` | 23 | Runtime config (schedule, thresholds, bridge address, Groq API key) |
+| `workflow.yaml` | 9 | Local simulation config |
+
+### CRE SDK Imports Used
+
+```typescript
+import {
+  EVMClient,           // On-chain reads & writes (callContract)
+  CronCapability,      // Scheduled trigger registration
+  Runner,              // Workflow bootstrap & lifecycle
+  handler,             // Maps triggers to handler functions
+  Runtime,             // Typed config & logging access
+  HTTPClient,          // Off-chain HTTP calls (Groq API)
+  bytesToHex,          // Decode EVM return values
+  encodeCallMsg,       // Build EVM call messages
+  getNetwork,          // Resolve chain selector → network
+  isChainSelectorSupported, // Validate chain ID
+  LAST_FINALIZED_BLOCK_NUMBER // Target finalized block for reads
+} from "@chainlink/cre-sdk";
+```
+
+### CRE Configuration Files
+
+**`cre.yaml`** — Project-level CRE config:
+```yaml
+project:
+  name: sentinel-bridge-watchdog
+targets:
+  default:
+    type: cvm            # Chainlink Virtual Machine
+    runtime: javascript  # JS runtime for workflow
+    main: ./workflow-dist/index.js
+```
+
+**`project.yaml`** — RPC endpoint config for staging/production  
+**`tsconfig.workflow.json`** — Separate TypeScript compilation for the CRE workflow (outputs to `./dist/`)
+
+### Workflow Lifecycle
+
+```
+1. BOOTSTRAP
+   main() → Runner.newRunner(configSchema) → runner.run(initWorkflow)
+
+2. INIT
+   initWorkflow(config) → CronCapability.create() → handler(cron.trigger({schedule}), onCronTrigger)
+
+3. EXECUTION (every 60 seconds via CronCapability)
+   onCronTrigger(runtime):
+     ├── Step 1: Read on-chain state (5 EVMClient.callContract calls)
+     │   ├── getSourceReserves()  → sourceReserve (BigInt)
+     │   ├── getDestReserves()    → destReserve (BigInt)
+     │   ├── getLockedAmount()    → lockedAmount (BigInt)
+     │   ├── getRiskRatio()       → riskRatio (uint256)
+     │   └── isPaused()           → bridgePaused (bool)
+     │
+     ├── Step 2: Heuristic risk scoring (evaluateRisk)
+     │   ├── LiquidityVelocityScore  (35% weight)
+     │   ├── StdDeviationAnomaly     (45% weight)
+     │   └── OracleDriftScore        (20% weight)
+     │   → Returns: { score, level: CRITICAL|HIGH|MEDIUM|LOW }
+     │
+     ├── Step 3: AI threat classification (analyzeWithGroq via HTTPClient)
+     │   ├── Sends reserve data + risk scores to Groq API
+     │   ├── LLaMA-3.1-8b classifies attack pattern
+     │   └── Returns: { riskLevel, confidence, attackPattern, reasoning, recommendation }
+     │
+     └── Step 4: Decision engine (AI-enhanced rules)
+         ├── CRITICAL + confidence ≥ 0.8 → EVMClient.callContract("pause") 🚨
+         ├── HIGH + confidence ≥ 0.7     → Rate limit (log warning) ⚠️
+         └── Otherwise                   → Monitor (log status) 📊
+```
+
+### How CRE Capabilities Are Used
+
+#### 1. `CronCapability` — Scheduled Trigger
+```typescript
+const cron = new CronCapability(config);
+handler(cron.trigger({ schedule: config.schedule }), onCronTrigger);
+// Schedule: "0 */1 * * * *" (every 60 seconds)
+```
+The CRE runtime invokes `onCronTrigger` on the configured schedule. This is the entry point for every monitoring cycle.
+
+#### 2. `EVMClient` — On-Chain Reads & Writes
+```typescript
+// READ: Get current reserve balance
+const msg = encodeCallMsg({
+  contractAddress: config.bridgeAddress,
+  functionName: "getSourceReserves",
+  abi: SOURCE_BRIDGE_ABI,
+  args: [],
+});
+const result = await EVMClient.callContract(runtime, {
+  network: getNetwork(config.chainSelector),
+  callMsg: msg,
+  blockNumber: LAST_FINALIZED_BLOCK_NUMBER,
+});
+const sourceReserve = BigInt(bytesToHex(result));
+
+// WRITE: Emergency pause
+const pauseMsg = encodeCallMsg({
+  contractAddress: config.bridgeAddress,
+  functionName: "pause",
+  abi: SOURCE_BRIDGE_ABI,
+  args: [],
+});
+await EVMClient.callContract(runtime, {
+  network: getNetwork(config.chainSelector),
+  callMsg: pauseMsg,
+});
+```
+
+#### 3. `HTTPClient` — Groq AI Integration
+```typescript
+const response = await HTTPClient.sendRequest(runtime, {
+  url: "https://api.groq.com/openai/v1/chat/completions",
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${config.groqApiKey}`,
+  },
+  body: JSON.stringify({
+    model: "llama-3.1-8b-instant",
+    messages: [{ role: "user", content: threatPrompt }],
+    temperature: 0.1,
+  }),
+});
+```
+
+### Risk Engine — Heuristic Scoring
+
+The risk engine in `risk-engine.ts` scores bridge health across three weighted dimensions:
+
+| Dimension | Weight | What It Detects |
+|-----------|--------|----------------|
+| **Liquidity Velocity** | 35% | Rapid reserve changes (flash loans, mass withdrawals) |
+| **Std Deviation Anomaly** | 45% | Statistical outliers from historical baseline |
+| **Oracle Drift** | 20% | Price feed discrepancies, stale oracles |
+
+**Thresholds:**
+- `score ≥ 75` → **CRITICAL** (circuit breaker eligible)
+- `score ≥ 50` → **HIGH** (rate limit / alert)
+- `score ≥ 25` → **MEDIUM** (monitor)
+- `score < 25` → **LOW** (healthy)
+
+**Special triggers:** `governanceCompromised` or `failedProof` flags → instant **CRITICAL** (bypasses scoring)
+
+### AI Threat Classification (Groq)
+
+The `groq-analyzer.ts` sends bridge telemetry to Groq's LLaMA-3.1-8b model via the CRE `HTTPClient`. The AI responds with:
+
+```json
+{
+  "riskLevel": "CRITICAL",
+  "confidence": 0.92,
+  "attackPattern": "FLASH_LOAN_EXPLOIT",
+  "reasoning": "800 ETH locked in single block exceeds 3σ from baseline",
+  "recommendation": "EMERGENCY_PAUSE"
+}
+```
+
+The 3-stage JSON extraction handles malformed AI responses with regex fallback and heuristic defaults.
+
+---
+
+## ⚡ Core Features
+
+| Feature | Description |
+|---------|-------------|
+| 🛡️ **Automated Circuit Breaker** | Pauses bridge operations via CRE when AI detects critical liquidity outflow |
+| 🧠 **AI Threat Intelligence** | Real-time Groq LLaMA analysis with attack pattern classification |
+| 🕵️ **Stealth Drain Detection** | Identifies slow-drip exploits that evade traditional TVL alerts |
+| 🚨 **Governance & Proof Monitoring** | Detects compromised multi-sigs and invalid ZK-proofs |
+| 📊 **Multi-Dimensional Risk Scoring** | Velocity + Anomaly + Oracle Drift with weighted scoring |
+| 🎛️ **Interactive Demo Controller** | Simulate 6 attack vectors against a live Hardhat node |
+| ⚡ **Emergency Kill Switch** | Manual `pause()` execution from the dashboard UI |
+| 📈 **Real-Time Dashboard** | Live metrics, risk gauge, activity log, security flag indicators |
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Workflow** | Chainlink CRE SDK (`@chainlink/cre-sdk`) | On-chain monitoring, scheduled triggers, emergency response |
+| **AI** | Groq API (LLaMA-3.1-8b-instant) | Threat classification, confidence scoring, attack pattern recognition |
+| **Frontend** | Next.js 15 (App Router), React 19, Tailwind CSS | Dashboard, demo controller, documentation pages |
+| **Smart Contracts** | Solidity 0.8.20, Hardhat 3.x | `SourceBridge.sol` — mock bridge with pause/unpause, reserves, attack flags |
+| **Language** | TypeScript (strict mode) | End-to-end type safety |
+| **Package Manager** | pnpm 9.0+ | Fast, efficient dependency resolution |
+
+---
+
+## 📁 Project Structure
+
+```
+SentinelBridge/
+├── src/workflows/sentinel-bridge/   # ⛓️ CHAINLINK CRE WORKFLOW
+│   ├── index.ts                     #   Main orchestrator (CronCapability → EVMClient → Risk → AI → Pause)
+│   ├── risk-engine.ts               #   Multi-dimensional heuristic scoring
+│   ├── groq-analyzer.ts             #   AI classification via CRE HTTPClient
+│   ├── abi.ts                       #   SourceBridge contract ABI
+│   ├── config.json                  #   Runtime config (schedule, thresholds)
+│   └── workflow.yaml                #   Local simulation config
+│
+├── contracts/
+│   └── SourceBridge.sol             # Mock bridge contract (Solidity 0.8.20)
+│
+├── app/                             # Next.js 15 App Router
+│   ├── page.tsx                     #   Landing page (Hero, How It Works, Threat Coverage)
+│   ├── layout.tsx                   #   Root layout (Navbar, BackgroundCanvas)
+│   ├── globals.css                  #   Tailwind + custom glass-morphism theme
+│   ├── dashboard/page.tsx           #   Command center (metrics, risk gauge, kill switch)
+│   ├── demo-controller/page.tsx     #   Attack simulation controller
+│   ├── docs/page.tsx                #   Architecture & demo documentation
 │   └── api/
-│       ├── status/route.ts           # GET /api/status (+ Groq AI assessment)
-│       ├── pause/route.ts            # POST /api/pause
-│       ├── demo/execute/route.ts    # POST /api/demo/execute
-│       └── demo/analyze/route.ts    # POST /api/demo/analyze
-├── components/                        # React Components
-├── lib/                              # API client + utilities
-├── hardhat.config.ts                 # Hardhat 3 configuration
-├── tsconfig.workflow.json            # TypeScript config (CRE workflow)
-└── package.json                      # Dependencies (@chainlink/cre-sdk)
+│       ├── status/route.ts          #   Bridge state + AI assessment
+│       ├── pause/route.ts           #   Emergency kill switch (real contract interaction)
+│       ├── logs/route.ts            #   Activity log endpoint
+│       └── demo/
+│           ├── analyze/route.ts     #   AI threat analysis
+│           ├── execute/route.ts     #   Demo scenario execution
+│           ├── bridge-state/route.ts#   Current bridge telemetry
+│           └── status/route.ts      #   Demo status
+│
+├── components/                      # React components
+│   ├── Navbar.tsx                   #   Glass-morphism navigation
+│   ├── HeroSection.tsx              #   Landing hero with logo
+│   ├── BackgroundCanvas.tsx         #   Animated background
+│   ├── Spinner.tsx                  #   Loading animation
+│   ├── DashboardCard.tsx            #   Metric cards
+│   ├── RiskGauge.tsx                #   Visual risk indicator
+│   ├── ActivityLog.tsx              #   Scrollable log feed
+│   └── WorkflowActionCard.tsx       #   Workflow status cards
+│
+├── scripts/                         # Hardhat demo scripts
+│   ├── deploy-bridge.ts             #   Contract deployment
+│   ├── demo-crisis.ts               #   Catastrophic exploit simulation
+│   ├── demo-flash-loan.ts           #   Flash loan attack
+│   ├── demo-stealth-drain.ts        #   Slow drain attack
+│   ├── demo-governance.ts           #   Governance hijack
+│   ├── demo-oracle.ts               #   Oracle/proof fraud
+│   ├── demo-normal.ts               #   Healthy traffic baseline
+│   └── show-bridge-state.ts         #   Current state display
+│
+├── lib/                             # Shared utilities
+│   ├── api.ts                       #   Frontend API helpers
+│   ├── cache.ts                     #   Response caching
+│   ├── simulation.ts                #   CLI simulation engine
+│   └── utils.ts                     #   Common utilities
+│
+├── cre.yaml                         # CRE project config (cvm target)
+├── project.yaml                     # CRE RPC endpoints
+├── tsconfig.workflow.json           # CRE workflow TypeScript config
+├── hardhat.config.ts                # Hardhat config (Solidity 0.8.20)
+├── package.json                     # Scripts & dependencies
+└── README.md                        # This file
 ```
 
-## 🚀 Quick Start
+---
+
+## 🚀 Quick Start Guide
 
 ### Prerequisites
 
-- Node.js >= 18.0.0
-- pnpm >= 9.0.0
-- Access to Chainlink CRE environment
-- EVM RPC endpoints for source and destination chains
+- [Node.js](https://nodejs.org/) v18+
+- [pnpm](https://pnpm.io/) v9.0+
+- A [Groq API key](https://console.groq.com/) (free tier works)
 
-### Installation
+### 1. Install Dependencies
 
 ```bash
-# Install dependencies with pnpm
+git clone https://github.com/your-username/SentinelBridge.git
+cd SentinelBridge
 pnpm install
-
-# Build both Next.js and CRE workflow
-pnpm run build
-
-# Start development server
-pnpm run dev
-
-# In another terminal, watch workflow changes
-pnpm run workflow:watch
 ```
 
-The dashboard will be available at `http://localhost:3000`
+### 2. Environment Setup
 
-### Configuration
+Create a `.env.local` file in the project root:
 
-1. Create `.env.local` from template:
-   ```bash
-   cp .env.example .env.local
-   ```
-
-2. Update `.env.local` with your SentinelBridge configuration:
-   ```env
-   # Bridge contract address
-   NEXT_PUBLIC_BRIDGE_ADDRESS=0x1234567890123456789012345678901234567890
-   
-   # Chain IDs
-   SOURCE_CHAIN_ID=1                # Ethereum
-   DEST_CHAIN_ID=137                # Polygon
-   
-   # Risk thresholds
-   MAX_RISK_RATIO=0.8               # 80% of source reserves
-   EMERGENCY_THRESHOLD=1000000000000000000  # 1 token in wei
-   
-   # RPC endpoints
-   SOURCE_RPC=https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY
-   DEST_RPC=https://polygon-mainnet.g.alchemy.com/v2/YOUR_API_KEY
-   ```
-
-## 📊 Dashboard Features
-
-### Hero Section
-- **Animated Background**: GPU-accelerated Three.js shader effect
-- **Particle Reveal**: Cyan, Blue, Purple color theme
-- **Call-To-Action**: Navigate to dashboard or learn more
-- **Feature Highlights**: 3 key benefit cards with icons
-- **Live Badge**: Shows real-time status indicator
-
-### Real-Time Monitoring
-- **System Status**: Bridge operational state and pause status
-- **Risk Gauge**: Visual representation of liquidity risk with color-coded zones
-- **Reserve Details**: Current reserve balances on both chains
-- **Circuit Breaker History**: Latest emergency actions taken
-
-### Key Metrics
-- **Risk Ratio**: (Target Locked / Source Reserve) × 100%
-- **Max Threshold**: Configurable limit (default 80%)
-- **Health Status**: 🟢 Safe, 🟡 Warning, 🔴 Critical
-
-### Auto-Refresh
-Dashboard auto-refreshes every 5 seconds to show latest workflow state. Can be toggled on/off with the "Auto-Refresh" button.
-
-## 🔧 API Routes
-
-### GET `/api/status`
-Returns current workflow status and reserve balances:
-```json
-{
-  "ok": true,
-  "isPaused": false,
-  "riskRatio": 42.5,
-  "sourceReserve": "1000000000000000000",
-  "destReserve": "500000000000000000",
-  "targetLocked": "425000000000000000",
-  "lastCheck": "2026-03-06T12:34:56.789Z",
-  "lastTransactionHash": null
-}
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3000
+GROQ_API_KEY=your_groq_api_key_here
 ```
 
-### POST `/api/pause`
-Manually trigger bridge pause (admin only):
-```json
-{
-  "ok": true,
-  "transactionHash": "0xabc123def456789"
-}
-```
+### 3. Start the Local Blockchain
 
-### GET `/api/logs`
-Fetch recent workflow event logs:
-```json
-{
-  "logs": ["🚀 SentinelBridge initialized", "📡 Event received", ...],
-  "timestamp": "2026-03-06T12:34:56.789Z"
-}
-```
-
-## 🛠️ CRE Workflow Architecture
-
-> **Key files for judges:** `src/workflows/sentinel-bridge/index.ts`, `risk-engine.ts`, `groq-analyzer.ts`
-
-### CRE SDK Capabilities Used
-
-| Capability | SDK Import | Usage |
-|---|---|---|
-| **CronCapability** | `@chainlink/cre-sdk` | Triggers watchdog on schedule |
-| **EVMClient** | `@chainlink/cre-sdk` | Reads bridge state + executes `pause()` |
-| **HTTPClient** | `@chainlink/cre-sdk` | Calls Groq LLaMA API for AI analysis |
-| **Runner** | `@chainlink/cre-sdk` | Workflow registration + config schema |
-
-### Risk Engine (Multi-Dimensional)
-
-| Dimension | Weight | Detects |
-|---|---|---|
-| LiquidityVelocityScore | 40% | Slow drains, abnormal withdrawal rates |
-| StdDeviationAnomaly (3σ) | 35% | Statistical outliers vs baseline |
-| OracleDriftScore | 25% | Reserve ratio manipulation |
-
-### Workflow Flow
-```
-CRE CronCapability Trigger
-  ├─→ EVMClient.callContract() — Read bridge state
-  ├─→ risk-engine.ts — Multi-dimensional heuristic scoring
-  ├─→ HTTPClient → Groq LLaMA — AI threat classification
-  ├─→ AI can escalate heuristic action if confidence ≥ 70%
-  └─→ EVMClient.callContract() — Execute bridge.pause() on-chain
-```
-
-### Response Tiers
-- **LOW** → MONITOR (continue watching)
-- **MEDIUM** → RATE_LIMIT (restrict withdrawals)
-- **HIGH** → PAUSE (circuit breaker)
-- **CRITICAL** → PAUSE + AI alert with attack pattern classification
-
-## 🎨 Customization Guide
-
-### Canvas Hero Section
-The hero section uses an advanced Three.js shader animation. To customize:
-
-**Change Colors**:
-```tsx
-// In components/HeroSection.tsx
-<CanvasRevealEffect
-  colors={[
-    [0, 255, 200],    // Cyan
-    [59, 130, 246],   // Blue
-    [139, 92, 246],   // Purple
-  ]}
-/>
-```
-
-**Adjust Animation Speed** (0.1 = slow, 1.0 = fast):
-```tsx
-<CanvasRevealEffect
-  animationSpeed={0.5}  // Current: balanced
-/>
-```
-
-**Change Particle Size**:
-```tsx
-<CanvasRevealEffect
-  dotSize={3}  // 1=fine mist, 3=visible, 5+=bold
-/>
-```
-
-For detailed Canvas customization, see [CANVAS_SETUP.md](CANVAS_SETUP.md).
-
-### Modifying Risk Threshold Logic
-1. Update thresholds in `src/workflows/sentinel-bridge/config.json`
-2. Adjust scoring weights in `src/workflows/sentinel-bridge/risk-engine.ts`
-3. Test with demo scenarios: `pnpm run demo:crisis`, `pnpm run demo:stealth`
-
-### Adding EVM Calls to CRE Workflow
-1. Define ABI in `src/workflows/sentinel-bridge/abi.ts`
-2. Use `EVMClient.callContract()` with `encodeCallMsg()` for reads/writes
-3. Use `encodeFunctionData()` / `decodeFunctionResult()` from `viem`
-4. Add comprehensive `runtime.log()` logging
-5. Test with `pnpm run simulate`
-
-## 🔐 Security Checklist
-
-- [ ] Bridge address is not zero address
-- [ ] Chain IDs match actual deployment
-- [ ] ABI function names match contract
-- [ ] Access control on pause() function
-- [ ] No hardcoded API keys or secrets
-- [ ] All async operations properly awaited
-- [ ] Error messages don't expose sensitive data
-- [ ] RPC endpoints from trusted sources
-
-## 🚀 Production Deployment
-
-### Key Considerations
-
-1. **RPC Reliability**: Use redundant or commercial RPC providers
-2. **Gas Optimization**: Monitor and optimize EVM calls
-3. **Monitoring**: Integrate PagerDuty/Slack for alerts
-4. **Smart Contract**: Ensure pause() has proper access controls
-5. **Backups**: Implement manual pause mechanism
-6. **Testing**: Deploy to testnet first
-
-### Example Alert Integration
-```typescript
-// In workflow onEvent after executePause
-if (!pauseResult.ok) {
-  // Send alert
-  await alerting.sendToSlack({
-    channel: "#bridge-alerts",
-    severity: "critical",
-    message: `SentinelBridge pause failed: ${pauseResult.error}`
-  });
-}
-```
-
-### Deployment Steps
+**Terminal 1:**
 ```bash
-# 1. Build for production
-pnpm run build
-
-# 2. Build CRE workflow
-pnpm run workflow:build
-
-# 3. Deploy Next.js (Vercel, Netlify, etc.)
-pnpm run start
-
-# 4. Simulate CRE workflow locally
-pnpm run simulate
-
-# 5. Deploy CRE workflow to Chainlink network
-cre workflow deploy ./src/workflows/sentinel-bridge
+npx hardhat node
 ```
 
-## 📚 References
+### 4. Deploy the Contract & Start the App
 
-### Chainlink CRE Documentation
-- [CRE TypeScript SDK](https://docs.chain.link/cre)
-- [Event Listening Patterns](https://docs.chain.link/cre/events)
-- [EVM Read/Call Operations](https://docs.chain.link/cre/evm)
+**Terminal 2:**
+```bash
+# Deploy SourceBridge to localhost
+pnpm run node:deploy
 
-### Next.js Documentation
-- [Next.js App Router](https://nextjs.org/docs/app)
-- [API Routes](https://nextjs.org/docs/app/building-your-application/routing/route-handlers)
-- [Styling with Tailwind](https://nextjs.org/docs/app/building-your-application/styling/tailwind-css)
+# Build Next.js + compile CRE workflow
+pnpm run build
 
-### Tools Used
-- **Next.js 15**: React framework with App Router
-- **React 19**: UI component library
-- **TypeScript**: Type-safe development
-- **Tailwind CSS**: Utility-first styling
-- **Three.js (r156)**: 3D WebGL rendering
-- **React Three Fiber**: React for Three.js
-- **pnpm**: Fast, efficient package manager
-- **Jest**: Unit testing framework
-- **Chainlink CRE**: Event-driven workflows
+# Start production server on port 3000
+pnpm start
+```
 
-### Three.js Canvas Details
-- **CanvasRevealEffect**: GPU-accelerated particle animation
-- **ShaderMaterial**: Custom vertex and fragment shaders
-- **DotMatrix**: Perlin-like noise with time-based animation
-- **Performance**: 60 FPS capped, ~150KB bundle size
+*(Alternatively, use `pnpm dev` for hot-reloading during development.)*
 
-## 🐛 Troubleshooting
+### 5. Open the Dashboard
 
-### Dashboard not loading
-- Check `.env.local` has correct values
-- Verify API routes compile: `pnpm run build`
-- Check browser console for client-side errors
-
-### Workflow not triggering
-- Ensure CRE environment is configured
-- Check RPC endpoints are responding
-- Verify bridge address is correct
-- Check workflow logs in dashboard
-
-### Risk ratio stuck at same value
-- Verify reserve balances are changing
-- Check locked amount is being updated
-- Ensure RPC connection is stable
-
-## ✅ Chainlink Convergence Hackathon Compliance
-
-| Requirement | Status | Evidence |
-|---|---|---|
-| **CRE Workflow built** | ✅ | `src/workflows/sentinel-bridge/index.ts` |
-| **Blockchain integration** | ✅ | `EVMClient.callContract()` reads + writes |
-| **External API/LLM integration** | ✅ | `HTTPClient` → Groq LLaMA-3.1-8B |
-| **On-chain state change** | ✅ | `bridge.pause()` via EVMClient |
-| **CRE CLI simulation** | ✅ | `pnpm run simulate` |
-| **Deploy script auto-syncs config** | ✅ | `deploy-bridge.ts` writes to `config.json` |
-| **Public source code** | ✅ | This repository |
-| **README links CRE files** | ✅ | See Project Structure above |
-
-### Demo Scenarios — All Working ✅
-
-| Demo | Command | What It Shows |
-|---|---|---|
-| **Crisis** | `pnpm run demo:crisis` | 4-phase circuit breaker (20% → 95% → PAUSED) |
-| **Flash Loan** | `pnpm run demo:flash` | Velocity anomaly detection → watchdog pauses |
-| **Stealth Drain** | `pnpm run demo:stealth` | Bypasses 80% static threshold, caught by 3σ |
-| **Governance Hijack** | `pnpm run demo:governance` | Unauthorized ownership → VETO queued |
-| **Normal** | `pnpm run demo:normal` | Healthy bridge at 20% risk |
-
-## 📄 License
-
-MIT
+Navigate to **http://localhost:3000** → Click **"Enter Command Center"** → See the live dashboard.
 
 ---
 
-**Last Updated**: March 2026  
-**Current Status**: ✅ All systems operational and tested  
-**For Hackathon**: Chainlink Convergence 2026  
-**CRE Workflow**: [`src/workflows/sentinel-bridge/index.ts`](src/workflows/sentinel-bridge/index.ts)
+## 🎮 Running Simulations (Demo Controller)
+
+Navigate to **http://localhost:3000/demo-controller** for the interactive UI, or use the CLI:
+
+| Command | Scenario | What Happens |
+|---------|----------|-------------|
+| `pnpm run demo:normal` | Healthy Traffic | Baseline ~20% risk ratio, all flags clear |
+| `pnpm run demo:crisis` | Catastrophic Exploit | 4-phase drain: 50% → 70% → 85% → PAUSE |
+| `pnpm run demo:flash` | Flash Loan Attack | 800 ETH locked in single block, velocity spike |
+| `pnpm run demo:stealth` | Stealth Drain | Incremental drain 350 → 450 → 550 → 650 → 720 ETH |
+| `pnpm run demo:governance` | Governance Hijack | Multi-sig compromise → 700 ETH drain → PAUSE |
+| `pnpm run demo:oracle` | Oracle/Proof Fraud | Forged Merkle proof → 600 ETH exploit → PAUSE |
+| `pnpm run demo:show` | View State | Prints current on-chain bridge state |
+
+### Attack Lifecycle
+
+1. Run an attack script (e.g., `pnpm run demo:crisis`)
+2. The `SourceBridge` contract state updates with simulated outflows
+3. Keep the Dashboard (`/dashboard`) open — the AI instantly detects the anomaly
+4. AI classifies the threat (e.g., **"MASSIVE EXPLOIT"**, confidence **0.95**)
+5. Circuit breaker status flips to **ACTIVATED (Paused)** 🚨
+
+---
+
+## 📡 API Endpoints
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `GET` | `/api/status` | Full bridge state + Groq AI risk assessment |
+| `POST` | `/api/pause` | Execute emergency `pause()` on SourceBridge contract |
+| `POST` | `/api/demo/analyze` | AI threat analysis for a given scenario |
+| `POST` | `/api/demo/execute` | Run a demo scenario via Hardhat script |
+| `GET` | `/api/demo/bridge-state` | Current bridge telemetry (reserves, flags, risk) |
+| `GET` | `/api/demo/status` | Demo controller status |
+| `GET` | `/api/logs` | Activity log entries |
+
+---
+
+## 📜 Smart Contract: SourceBridge
+
+`contracts/SourceBridge.sol` — Solidity 0.8.20
+
+### State Variables
+| Variable | Type | Purpose |
+|----------|------|---------|
+| `sourceReserve` | `uint256` | Token reserves on source chain |
+| `destinationReserve` | `uint256` | Token reserves on destination chain |
+| `lockedAmount` | `uint256` | Tokens currently locked/bridged |
+| `paused` | `bool` | Circuit breaker status |
+| `governanceCompromised` | `bool` | Governance hijack flag |
+| `failedProof` | `bool` | Proof verification failure flag |
+
+### Key Functions
+| Function | Access | Purpose |
+|----------|--------|---------|
+| `pause()` | Owner | Emergency circuit breaker activation |
+| `unpause()` | Owner | Resume bridge operations |
+| `bridgeTokens(amount)` | Public | Simulate token bridging |
+| `setReserves(src, dest)` | Owner | Set reserve balances (demo) |
+| `setLockedAmount(amount)` | Owner | Set locked amount (demo) |
+| `triggerGovernanceHijack()` | Owner | Simulate governance compromise |
+| `triggerProofFailure()` | Owner | Simulate proof verification failure |
+| `resetAttackFlags()` | Owner | Clear all attack flags |
+
+**Initial State:** 1000 ETH source reserve, 500 ETH dest reserve, 200 ETH locked (20% risk ratio)
+
+---
+
+## 🔐 Security Considerations
+
+- **Address validation**: All contract addresses validated before EVM calls
+- **Chain ID verification**: `isChainSelectorSupported()` check before every on-chain operation
+- **Result pattern**: All EVM operations use `Result<T>` — no unhandled undefined access
+- **Async safety**: Every `await` properly handled; no floating promises
+- **State integrity**: State mutations only after confirmed successful operations
+- **No hardcoded secrets**: API keys loaded from environment variables at runtime
+- **AI fallback**: If Groq API fails, heuristic scoring continues independently
+- **False positive protection**: AI confidence threshold (0.8) prevents unnecessary pauses
+
+---
+
+## � Development Log
+
+| Date | Change | Details |
+|------|--------|---------|
+| Mar 9, 2026 | Docs page rewrite | Expanded `/docs` from 3 sections (212 lines) to 8 comprehensive sections (~450 lines): Architecture with ASCII diagram, CRE Workflow deep dive (file map, SDK capabilities, lifecycle, config), Risk Engine scoring (3 dimensions with weights), Attack Vectors with defense strategies, Smart Contract reference, API Reference with example response, Demo Controller with CLI commands, Quick Start guide. Added section nav bar and reusable sub-components. |
+| Mar 9, 2026 | SSL fix for Groq API | Created `lib/groq-client.ts` with custom HTTPS agent (keepAlive:false, TLS 1.2 min) and 3-retry exponential backoff. Updated both API routes to use shared client. |
+| Mar 9, 2026 | Crisis demo fix | Added reset Phase 0 to `demo-crisis.ts` (unpause + resetAttackFlags + setReserves + setLockedAmount). Added `resetAttackFlags()` to flash-loan, stealth-drain, normal demo scripts. |
+| Mar 9, 2026 | Logo rounded | Changed all 4 logo containers from `rounded-2xl`/`rounded-xl`/`rounded-lg` to `rounded-full`. |
+| Mar 8, 2026 | Comprehensive README | Wrote full submission README with CRE deep dive, architecture diagram, all features, and security docs. |
+| Mar 8, 2026 | Kill switch functional | Rewrote `/api/pause/route.ts` from stub to real contract interaction via Hardhat script. |
+| Mar 8, 2026 | Landing page + loading | Rewrote homepage as proper landing page. Added unified Spinner animation to all pages. |
+| Mar 8, 2026 | Build fix | Fixed `Parameter 'rule' implicitly has an 'any' type` in next.config.ts. |
+
+---
+
+## �📜 License
+
+This project is licensed under the MIT License — built for the **Chainlink Convergence Hackathon 2026**.

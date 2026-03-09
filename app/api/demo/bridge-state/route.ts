@@ -40,19 +40,19 @@ export async function GET() {
     };
 
     const [sourceHex, destHex, lockedHex, riskHex, pausedHex] = await Promise.all([
-      callContract(selectors.getSourceReserves),
-      callContract(selectors.getDestReserves),
-      callContract(selectors.getLockedAmount),
-      callContract(selectors.getRiskRatio),
-      callContract(selectors.isPaused),
+      callContract(selectors.getSourceReserves).catch(() => "0x0"),
+      callContract(selectors.getDestReserves).catch(() => "0x0"),
+      callContract(selectors.getLockedAmount).catch(() => "0x0"),
+      callContract(selectors.getRiskRatio).catch(() => "0x0"),
+      callContract(selectors.isPaused).catch(() => "0x0"),
     ]);
 
-    // Parse hex values
-    const sourceReserve = BigInt(sourceHex).toString();
-    const destReserve = BigInt(destHex).toString();
-    const lockedAmount = BigInt(lockedHex).toString();
-    const riskRatio = Number(BigInt(riskHex));
-    const isPaused = BigInt(pausedHex) !== 0n;
+    // Parse hex values safely
+    const sourceReserve = sourceHex ? BigInt(sourceHex).toString() : "0";
+    const destReserve = destHex ? BigInt(destHex).toString() : "0";
+    const lockedAmount = lockedHex ? BigInt(lockedHex).toString() : "0";
+    const riskRatio = riskHex ? Number(BigInt(riskHex)) : 0;
+    const isPaused = pausedHex ? BigInt(pausedHex) !== 0n : false;
 
     return NextResponse.json({
       ok: true,

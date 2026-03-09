@@ -9,11 +9,10 @@ import fs from "fs";
  */
 
 async function main() {
-  console.log('╔════════════════════════════════════════════════╗')
-  console.log('║       [START] Normal Bridge Operation Demo     ║')
-  console.log('║       Healthy Monitoring & Operations          ║')
-  console.log('╚════════════════════════════════════════════════╝')
-  console.log('')
+  console.log("\n╔════════════════════════════════════════════════╗");
+  console.log("║       Normal Bridge Operation Demo             ║");
+  console.log("║       Healthy Monitoring & Operations          ║");
+  console.log("╚════════════════════════════════════════════════╝\n");
 
   // Get or deploy contract
   let contractAddress: string;
@@ -24,10 +23,9 @@ async function main() {
       fs.readFileSync("./tmp/bridge-address.json", "utf-8")
     );
     contractAddress = savedData.address;
-    console.log(`[INFO] Using contract: ${contractAddress}`);
-    console.log('')
+    console.log(`📍 Using contract: ${contractAddress}\n`);
   } catch {
-    console.log("Contract address not found. Run: pnpm run node:deploy");
+    console.log("❌ Contract address not found. Run: pnpm run node:deploy\n");
     process.exit(1);
   }
 
@@ -47,7 +45,7 @@ async function main() {
   const bridge = new ethers.Contract(contractAddress, contractJson.abi, signer);
 
   // Reset to healthy state
-  console.log("[INIT] Resetting bridge to healthy state...");
+  console.log("🔄 Resetting bridge to healthy state...\n");
   const resetTx = await bridge.setReserves(
     ethers.parseEther("1000"),
     ethers.parseEther("500")
@@ -57,31 +55,36 @@ async function main() {
   const resetTx2 = await bridge.setLockedAmount(ethers.parseEther("200"));
   await resetTx2.wait();
 
+  const resetTx3 = await bridge.unpause();
   try {
-    const resetTx3 = await bridge.unpause();
     await resetTx3.wait();
   } catch {
     // Already unpaused, ignore
   }
 
-  const initialRisk = await bridge.getRiskRatio()
+  try {
+    await (await bridge.resetAttackFlags()).wait();
+  } catch {
+    // Flags already clear
+  }
 
-  console.log(`[OK] Bridge Reset. Current Risk: ${initialRisk}%`)
-  console.log('')
-
-  const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
-
-  // Simulate normal user activity
-  console.log('======================================================')
-  console.log('[INFO] Simulating normal user cross-chain activity...')
-  console.log('======================================================')
-  console.log('')
+  console.log("═══════════════════════════════════════════════");
+  console.log("INITIAL STATE: All Systems Healthy");
+  console.log("═══════════════════════════════════════════════\n");
 
   // Show initial state
   let sourceReserve = await bridge.getSourceReserves();
   let lockedAmount = await bridge.getLockedAmount();
   let riskRatio = await bridge.getRiskRatio();
   let isPaused = await bridge.isPaused();
+
+  console.log(
+    `✅ BRIDGE STATE:\n   Source Reserve: ${ethers.formatEther(sourceReserve)} tokens\n   Locked Amount:  ${ethers.formatEther(lockedAmount)} tokens\n   Risk Ratio:     ${riskRatio.toString()}%\n   Paused:         ${isPaused ? "YES 🚨" : "NO ✅"}\n`
+  );
+
+  console.log(
+    "💭 SentinelBridge Workflow:\n   Risk ratio is ${riskRatio}% - Well below 80% threshold\n   ✅ All systems nominal\n   ✅ Bridge operating normally\n   ✅ No alerts triggered\n"
+  );
 
   await delay(2000);
 

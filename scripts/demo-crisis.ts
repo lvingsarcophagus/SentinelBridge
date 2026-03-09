@@ -14,11 +14,10 @@ import fs from "fs";
  */
 
 async function main() {
-  console.log('╔════════════════════════════════════════════════╗')
-  console.log('║       [ALERT] Crisis Event Simulation          ║')
-  console.log('║       Hack -> Risk Spike -> Circuit Breaker    ║')
-  console.log('╚════════════════════════════════════════════════╝')
-  console.log('')
+  console.log("\n╔════════════════════════════════════════════════╗");
+  console.log("║     SentinelBridge Crisis Demo                 ║");
+  console.log("║     Monitoring → Detection → Pause             ║");
+  console.log("╚════════════════════════════════════════════════╝\n");
 
   // Get or deploy contract
   let contractAddress: string;
@@ -29,9 +28,9 @@ async function main() {
       fs.readFileSync("./tmp/bridge-address.json", "utf-8")
     );
     contractAddress = savedData.address;
-    console.log(`[INFO] Using existing contract: ${contractAddress}\n`);
+    console.log(`📍 Using existing contract: ${contractAddress}\n`);
   } catch {
-    console.log("[ERROR] Contract address not found. Run: npx hardhat run scripts/deploy-bridge.ts --network localhost\n");
+    console.log("❌ Contract address not found. Run: npx hardhat run scripts/deploy-bridge.ts --network localhost\n");
     process.exit(1);
   }
 
@@ -50,21 +49,23 @@ async function main() {
 
   const bridge = new ethers.Contract(contractAddress, contractJson.abi, signer);
 
-  // Reset bridge to clean state for demo
-  console.log("[INIT] Resetting bridge to initial state...\n");
-  const rTx1 = await bridge.setReserves(
-    ethers.parseEther("1000"),
-    ethers.parseEther("500")
-  );
-  await rTx1.wait();
-  const rTx2 = await bridge.setLockedAmount(ethers.parseEther("200"));
-  await rTx2.wait();
-  try {
-    const rTx3 = await bridge.unpause();
-    await rTx3.wait();
-  } catch {
-    // Already unpaused, ignore
+  // Phase 0: Reset to healthy baseline so the demo is re-runnable
+  console.log("🔄 Resetting bridge to healthy baseline...\n");
+
+  if (await bridge.isPaused()) {
+    const txUnpause = await bridge.unpause();
+    await txUnpause.wait();
   }
+  // Reset attack flags
+  const txFlags = await bridge.resetAttackFlags();
+  await txFlags.wait();
+  // Restore initial reserves: 1000 source, 500 dest, 200 locked
+  const txRes = await bridge.setReserves(ethers.parseEther("1000"), ethers.parseEther("500"));
+  await txRes.wait();
+  const txLock = await bridge.setLockedAmount(ethers.parseEther("200"));
+  await txLock.wait();
+
+  console.log("✅ Bridge reset to healthy state (1000/500/200)\n");
 
   // Phase 1: Healthy State
   console.log("═══════════════════════════════════════════════");
@@ -77,12 +78,12 @@ async function main() {
   let isPaused = await bridge.isPaused();
 
   console.log(
-    `[INFO] HEALTHY BRIDGE STATE:\n   Source Reserve: ${ethers.formatEther(sourceReserve)} tokens\n   Locked Amount:  ${ethers.formatEther(lockedAmount)} tokens\n   Risk Ratio:     ${riskRatio.toString()}%\n   Status:         ${isPaused ? "[PAUSED]" : "[OPERATIONAL]"}\n`
+    `✅ HEALTHY BRIDGE STATE:\n   Source Reserve: ${ethers.formatEther(sourceReserve)} tokens\n   Locked Amount:  ${ethers.formatEther(lockedAmount)} tokens\n   Risk Ratio:     ${riskRatio.toString()}%\n   Status:         ${isPaused ? "🚨 PAUSED" : "✅ OPERATIONAL"}\n`
   );
 
-  console.log("Workflow status:");
+  console.log("💭 SentinelBridge workflow status:");
   console.log(
-    `   Risk is ${riskRatio.toString()}% - Below 80% threshold, all healthy\n`
+    `   Risk is ${riskRatio.toString()}% - Below 80% threshold, all healthy ✅\n`
   );
 
   // Simulate user interaction
@@ -93,7 +94,7 @@ async function main() {
   console.log("PHASE 2: CRISIS EVENT - Reserves Drain!!");
   console.log("═══════════════════════════════════════════════\n");
 
-  console.log("[WARNING] SIMULATING HACK:");
+  console.log("⚠️  SIMULATING HACK:");
   console.log("   - Smart contract vulnerability discovered");
   console.log("   - Attacker drains 60% of reserves");
   console.log("   - Running: bridge.setReserves(400 ether, 500 ether)\n");
@@ -104,17 +105,17 @@ async function main() {
   );
   await tx1.wait();
 
-  console.log("Reserves have been drained!\n");
+  console.log("✓ Reserves have been drained!\n");
 
   sourceReserve = await bridge.getSourceReserves();
   lockedAmount = await bridge.getLockedAmount();
   riskRatio = await bridge.getRiskRatio();
 
-  console.log(`[ALERT] NEW STATE AFTER DRAIN:\n   Source Reserve: ${ethers.formatEther(sourceReserve)} tokens\n   Locked Amount:  ${ethers.formatEther(lockedAmount)} tokens\n   Risk Ratio:     ${riskRatio.toString()}%\n`);
+  console.log(`🔴 NEW STATE AFTER DRAIN:\n   Source Reserve: ${ethers.formatEther(sourceReserve)} tokens\n   Locked Amount:  ${ethers.formatEther(lockedAmount)} tokens\n   Risk Ratio:     ${riskRatio.toString()}%\n`);
 
-  console.log("Workflow status:");
+  console.log("💭 SentinelBridge workflow status:");
   console.log(
-    `   Risk is now ${riskRatio.toString()}% - Exceeds 80% threshold!\n`
+    `   Risk is now ${riskRatio.toString()}% - Exceeds 80% threshold! ⚠️\n`
   );
 
   await delay(2000);
@@ -126,7 +127,7 @@ async function main() {
   );
   console.log("═══════════════════════════════════════════════\n");
 
-  console.log("[WARNING] CONTINUING DRAIN:");
+  console.log("⚠️  CONTINUING DRAIN:");
   console.log("   - Attacker continues stealing");
   console.log("   - Now locking even more tokens");
   console.log("   - Running: bridge.setLockedAmount(380 ether)\n");
@@ -134,18 +135,18 @@ async function main() {
   const tx2 = await bridge.setLockedAmount(ethers.parseEther("380"));
   await tx2.wait();
 
-  console.log("Locked amount increased!\n");
+  console.log("✓ Locked amount increased!\n");
 
   sourceReserve = await bridge.getSourceReserves();
   lockedAmount = await bridge.getLockedAmount();
   riskRatio = await bridge.getRiskRatio();
 
   console.log(
-    `[CRITICAL] CRITICAL STATE:\n   Source Reserve: ${ethers.formatEther(sourceReserve)} tokens\n   Locked Amount:  ${ethers.formatEther(lockedAmount)} tokens\n   Risk Ratio:     ${riskRatio.toString()}%\n   (Locked > Reserves!) INSOLVENT\n`
+    `🚨 CRITICAL STATE:\n   Source Reserve: ${ethers.formatEther(sourceReserve)} tokens\n   Locked Amount:  ${ethers.formatEther(lockedAmount)} tokens\n   Risk Ratio:     ${riskRatio.toString()}%\n   (Locked > Reserves!) INSOLVENT\n`
   );
 
-  console.log("Workflow status:");
-  console.log(`   [CRITICAL] CRITICAL ALERT: Risk at ${riskRatio.toString()}%!`);
+  console.log("💭 SentinelBridge workflow status:");
+  console.log(`   🚨 CRITICAL ALERT: Risk at ${riskRatio.toString()}%!`);
   console.log("   Risk exceeds maximum threshold of 80%");
   console.log("   Activating Emergency Circuit Breaker...\n");
 
@@ -156,39 +157,39 @@ async function main() {
   console.log("PHASE 4: CIRCUIT BREAKER ACTIVATION");
   console.log("═══════════════════════════════════════════════\n");
 
-  console.log("[ALERT] EXECUTING EMERGENCY PAUSE:");
+  console.log("🚨 EXECUTING EMERGENCY PAUSE:");
   console.log("   Calling: bridge.pause()\n");
 
   const tx3 = await bridge.pause();
   const receipt = await tx3.wait();
 
-  console.log("Bridge has been paused!\n");
+  console.log("✓ Bridge has been paused!\n");
 
   isPaused = await bridge.isPaused();
 
   console.log(
-    `[INFO] BRIDGE PAUSED:\n   Status:             ${isPaused ? "[PAUSED]" : "OPERATIONAL"}\n   Transaction Hash:   ${receipt?.hash}\n`
+    `✅ BRIDGE PAUSED:\n   Status:             ${isPaused ? "🚨 PAUSED" : "OPERATIONAL"}\n   Transaction Hash:   ${receipt?.hash}\n`
   );
 
-  console.log("Workflow result:");
-  console.log("   Circuit breaker successfully activated");
-  console.log("   No new tokens can be bridged");
-  console.log("   Users can still withdraw existing tokens");
-  console.log("   Team has time to investigate and fix\n");
+  console.log("💭 SentinelBridge workflow result:");
+  console.log("   ✅ Circuit breaker successfully activated");
+  console.log("   ✅ No new tokens can be bridged");
+  console.log("   ✅ Users can still withdraw existing tokens");
+  console.log("   ✅ Team has time to investigate and fix\n");
 
   // Summary
   console.log("═══════════════════════════════════════════════");
   console.log("DEMO SUMMARY");
   console.log("═══════════════════════════════════════════════\n");
 
-  console.log("What we demonstrated:\n");
+  console.log("✅ What we demonstrated:\n");
   console.log("   1. Healthy bridge operation (20% risk)");
   console.log("   2. Crisis detection (reserves drain to 400/1000)");
   console.log("   3. Risk escalation (risk rises to 95%)");
   console.log("   4. Automatic pause trigger (circuit breaker activated)");
   console.log("   5. Bridge protection (no more bridging allowed)\n");
 
-  console.log("Key Metrics:");
+  console.log("📊 Key Metrics:");
   const finalState = {
     sourceReserve: ethers.formatEther(await bridge.getSourceReserves()),
     lockedAmount: ethers.formatEther(await bridge.getLockedAmount()),

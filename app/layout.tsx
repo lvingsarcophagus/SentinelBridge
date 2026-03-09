@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   title: "SentinelBridge — Liquidity Watchdog",
   description:
     "Automated circuit breaker for cross-chain bridge liquidity monitoring. Built with Chainlink CRE for the Convergence Hackathon 2026.",
+  icons: {
+    icon: "/sentinel-logo.png",
+  },
 };
 
 export default function RootLayout({
@@ -34,10 +37,16 @@ export default function RootLayout({
               <div className="grid gap-8 sm:grid-cols-3">
                 {/* Brand */}
                 <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-xl">🛡️</span>
-                    <span className="text-lg font-bold text-white">
-                      SentinelBridge
+                  <div className="flex items-center gap-3 mb-4 group">
+                    <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-slate-900 border border-slate-700/50 overflow-hidden">
+                      <img 
+                        src="/sentinel_logo_new_1772987283819.png" 
+                        alt="SB Logo" 
+                        className="w-full h-full object-cover scale-110 grayscale group-hover:grayscale-0 transition-all duration-300"
+                      />
+                    </div>
+                    <span className="text-lg font-bold text-white tracking-tight">
+                      Sentinel<span className="text-gradient">Bridge</span>
                     </span>
                   </div>
                   <p className="text-sm text-slate-500 leading-relaxed">
@@ -54,18 +63,10 @@ export default function RootLayout({
                   <ul className="space-y-2 text-sm text-slate-500">
                     <li>
                       <a
-                        href="/"
+                        href="/dashboard"
                         className="hover:text-cyan-400 transition-colors"
                       >
                         Dashboard
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="/simulation"
-                        className="hover:text-cyan-400 transition-colors"
-                      >
-                        Simulation Engine
                       </a>
                     </li>
                     <li>
@@ -74,6 +75,14 @@ export default function RootLayout({
                         className="hover:text-cyan-400 transition-colors"
                       >
                         Demo Controller
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        href="/docs"
+                        className="hover:text-cyan-400 transition-colors"
+                      >
+                        Documentation
                       </a>
                     </li>
                   </ul>

@@ -46,9 +46,15 @@ async function main() {
     process.exit(1)
   }
 
+<<<<<<< Updated upstream
   const rpcUrl = process.env.TESTNET_RPC || "http://127.0.0.1:8545"
   const provider = new ethers.JsonRpcProvider(rpcUrl)
   const signer = await provider.getSigner(0)
+=======
+  const rpcUrl = "http://127.0.0.1:8545";
+  const provider = new ethers.JsonRpcProvider(rpcUrl);
+  const signer = await provider.getSigner(0);
+>>>>>>> Stashed changes
 
   const contractJson = JSON.parse(
     fs.readFileSync(
@@ -57,6 +63,14 @@ async function main() {
     )
   )
   const bridge = new ethers.Contract(contractAddress, contractJson.abi, signer)
+
+  // Check if contract exists
+  const code = await provider.getCode(contractAddress)
+  if (code === '0x' || code === '0x0') {
+    console.log(`[ERROR] No contract found at address: ${contractAddress}`)
+    console.log('[TIP] Run pnpm node:deploy first to deploy the bridge.\n')
+    process.exit(1)
+  }
 
   // ── Reset to healthy state ──────────────────────────
 
@@ -82,6 +96,12 @@ async function main() {
     await (await bridge.unpause()).wait()
   } catch {
     // Already unpaused
+  }
+
+  try {
+    await (await bridge.resetAttackFlags()).wait()
+  } catch {
+    // Flags already clear
   }
 
   const startRisk = await bridge.getRiskRatio()

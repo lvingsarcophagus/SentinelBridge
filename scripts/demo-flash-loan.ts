@@ -63,6 +63,7 @@ async function main() {
   // Reset to clean state for demo (in case crisis demo left it paused)
   console.log("[INIT] Resetting bridge to healthy baseline...\n");
   try { await (await bridge.unpause()).wait(); } catch { /* already unpaused */ }
+  try { await (await bridge.resetAttackFlags()).wait(); } catch { /* flags already clear */ }
   await (await bridge.setReserves(ethers.parseEther("1000"), ethers.parseEther("500"))).wait();
   await (await bridge.setLockedAmount(ethers.parseEther("200"))).wait();
 

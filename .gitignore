@@ -1,2 +1,36 @@
-*.env
-node_modules
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Next.js build
+.next/
+
+# Build outputs
+dist/
+workflow-dist/
+artifacts/
+cache/
+
+# Logs
+*.log
+dev.log
+
+# Temp files
+tmp/
+tmp3/
+tsconfig.tsbuildinfo
+
+# Debug / test logs
+simulate_*.log
+cre_*.log
+cre_*.txt
+eslint.log
+error.log
+build_*.log
+lint_*.log
+test_*.log
+tsc_*.log

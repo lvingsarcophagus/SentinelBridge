@@ -5,9 +5,10 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 
 const navLinks = [
-  { href: "/", label: "Dashboard", icon: "" },
-  { href: "/demo-controller", label: "Controller", icon: "" },
-  { href: "/docs", label: "Documentation", icon: "" },
+  { href: "/", label: "Home", icon: "" },
+  { href: "/dashboard", label: "Dashboard", icon: "" },
+  { href: "/demo-controller", label: "Demo", icon: "" },
+  { href: "/docs", label: "Docs", icon: "" },
 ];
 
 export function Navbar() {
@@ -45,11 +46,13 @@ export function Navbar() {
           <div className="flex items-center justify-between px-4 py-3 sm:px-6">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="relative">
-                <div className="text-xl font-black text-[#00E5FF] tracking-tighter">
-                  //SB//
-                </div>
-                <div className="absolute -inset-1 rounded-full bg-cyan-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md" />
+              <div className="relative flex items-center justify-center w-10 h-10 rounded-full bg-slate-900 border border-slate-700/50 overflow-hidden">
+                <img 
+                  src="/sentinel_logo_new_1772987283819.png" 
+                  alt="SB Logo" 
+                  className="w-full h-full object-cover scale-110"
+                />
+                <div className="absolute inset-0 bg-cyan-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 mix-blend-overlay" />
               </div>
               <div>
                 <h1 className="text-lg font-bold text-white tracking-tight">
@@ -71,7 +74,7 @@ export function Navbar() {
                     pathname === link.href ? "nav-link-active" : ""
                   }`}
                 >
-                  <span className="mr-1.5">{link.icon}</span>
+                  {link.icon && <span className="mr-1.5">{link.icon}</span>}
                   {link.label}
                 </Link>
               ))}
@@ -131,7 +134,7 @@ export function Navbar() {
                       : "text-slate-400 hover:text-white hover:bg-white/5"
                   }`}
                 >
-                  <span>{link.icon}</span>
+                  {link.icon && <span>{link.icon}</span>}
                   {link.label}
                 </Link>
               ))}
