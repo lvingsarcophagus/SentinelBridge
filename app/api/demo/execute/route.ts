@@ -119,18 +119,7 @@ export async function POST(request: Request) {
       });
     }
 
-<<<<<<< Updated upstream
-    const isProd = process.env.NETLIFY === "true" || process.env.NODE_ENV === "production" || process.env.VERCEL;
-    const rpc = process.env.SEPOLIA_RPC_URL || process.env.SOURCE_RPC || "";
-    const isTestnet = rpc.includes("http") && !rpc.includes("127.0.0.1") && !rpc.includes("localhost");
-    
-    // Use sepolia flag if in production OR if explicitly pointing to a non-local RPC
-    const networkFlag = (isProd || isTestnet) ? "--network sepolia" : "--network localhost";
-
     if (action === "deploy-bridge") {
-=======
-    if (action === "deploy") {
->>>>>>> Stashed changes
       demoRunning = true;
       const result = await executeCommand("pnpm", ["run", "node:deploy"]);
       demoRunning = false;
